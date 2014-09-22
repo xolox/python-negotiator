@@ -57,7 +57,7 @@ If you prefer you can install the Python package in a virtual environment::
 
   sudo apt-get install --yes python-virtualenv
   virtualenv /tmp/negotiator-guest
-  source /tmp/negotiator-gueset/bin/activate
+  source /tmp/negotiator-guest/bin/activate
   pip install negotiator-guest
 
 After installation you need to find a way to run the ``negotiator-guest``
