@@ -1,0 +1,3 @@
+common/dist/*.tar.gz
+guest/dist/*.tar.gz
+host/dist/*.tar.gz
