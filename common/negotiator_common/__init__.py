@@ -28,7 +28,7 @@ import time
 from negotiator_common.utils import compact
 
 # Semi-standard module versioning.
-__version__ = '0.2'
+__version__ = '0.2.1'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)

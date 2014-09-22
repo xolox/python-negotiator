@@ -23,7 +23,7 @@ from negotiator_common import NegotiatorInterface
 from negotiator_common.config import DEFAULT_CHANNEL_NAME, DEFAULT_CHARACTER_DEVICE
 
 # Semi-standard module versioning.
-__version__ = '0.2'
+__version__ = '0.2.1'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
