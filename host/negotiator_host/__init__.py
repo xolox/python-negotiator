@@ -19,20 +19,15 @@ import os
 import socket
 
 # External dependencies.
-from negotiator_common import NegotiatorInterface, compact
+from negotiator_common import NegotiatorInterface
+from negotiator_common.config import DEFAULT_CHANNEL_DIRECTORY, DEFAULT_CHANNEL_NAME
+from negotiator_common.utils import compact
 
 # Semi-standard module versioning.
-__version__ = '0.1'
+__version__ = '0.2'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
-
-# The location of the directory containing the UNIX sockets created by QEMU.
-DEFAULT_CHANNEL_DIRECTORY = '/var/lib/libvirt/qemu/channel/target'
-
-# The filename suffix of the UNIX sockets created by QEMU. This is the channel
-# target name in the QEMU guest configuration.
-DEFAULT_CHANNEL_NAME = 'negotiator-channel.0'
 
 
 class GuestChannel(NegotiatorInterface):

@@ -24,8 +24,11 @@ import json
 import logging
 import time
 
+# Modules included in our package.
+from negotiator_common.utils import compact
+
 # Semi-standard module versioning.
-__version__ = '0.1'
+__version__ = '0.2'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -221,18 +224,3 @@ class NegotiatorInterface(object):
 class ProtocolError(Exception):
 
     """Exception that is raised when the communication protocol is violated."""
-
-
-def compact(text, **kw):
-    """
-    Compact whitespace and format any arguments into the given string.
-
-    Trims leading and trailing whitespace, replaces runs of whitespace with a
-    single space and formats any keyword arguments into the resulting string
-    using :py:func:`str.format()`.
-
-    :param text: The text to compact (a string).
-    :param kw: Any keyword arguments to apply using :py:func:`str.format()`.
-    :returns: The compacted, formatted string.
-    """
-    return ' '.join(text.split()).format(**kw)

@@ -13,13 +13,13 @@ import os
 import re
 
 # De-facto standard solution for Python packaging.
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # Find the directory where the source distribution was unpacked.
 source_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Find the current version.
-module = os.path.join(source_directory, 'negotiator_common.py')
+module = os.path.join(source_directory, 'negotiator_common', '__init__.py')
 for line in open(module, 'r'):
     match = re.match(r'^__version__\s*=\s*["\']([^"\']+)["\']$', line)
     if match:
@@ -44,4 +44,4 @@ setup(name='negotiator-common',
       url='https://negotiator.readthedocs.org',
       author="Peter Odding",
       author_email='peter@peterodding.com',
-      py_modules=['negotiator_common'])
+      packages=find_packages())

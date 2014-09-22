@@ -1,7 +1,7 @@
 # Generic QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 21, 2014
+# Last Change: September 22, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -43,8 +43,8 @@ import sys
 # External dependencies.
 import coloredlogs
 
-# Modules included in our package.
-from negotiator_guest import DEFAULT_CHARACTER_DEVICE, GuestAgent
+# Modules included in our project.
+from negotiator_guest import GuestAgent
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ def main():
     coloredlogs.install(level=logging.INFO)
     # Parse the command line arguments.
     start_daemon = False
-    character_device = DEFAULT_CHARACTER_DEVICE
+    character_device = None
     try:
         options, arguments = getopt.getopt(sys.argv[1:], 'dc:vqh', [
             'daemon', 'character-device=', 'verbose', 'quiet', 'help'

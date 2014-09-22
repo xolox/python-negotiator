@@ -40,7 +40,7 @@ check:
 	@test -x "$(VIRTUAL_ENV)/bin/pep257" || ($(ACTIVATE) && pip install pep257)
 	$(ACTIVATE) && pyflakes .
 	$(ACTIVATE) && pep8 --max-line-length=120 .
-	$(ACTIVATE) && pep257 --ignore=D400 .
+	$(ACTIVATE) && pep257 --ignore=D205,D400 .
 
 docs: install
 	test -x "$(VIRTUAL_ENV)/bin/sphinx-build" || ($(ACTIVATE) && pip-accel install sphinx)

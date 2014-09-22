@@ -15,13 +15,15 @@ running inside KVM/QEMU guests.
 # Standard library modules.
 import functools
 import logging
+import os
 
 # External dependencies.
 from executor import execute
 from negotiator_common import NegotiatorInterface
+from negotiator_common.config import DEFAULT_CHANNEL_NAME, DEFAULT_CHARACTER_DEVICE
 
 # Semi-standard module versioning.
-__version__ = '0.1'
+__version__ = '0.2'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -29,22 +31,37 @@ logger = logging.getLogger(__name__)
 # Inject our logger into all execute() invocations.
 execute = functools.partial(execute, logger=logger)
 
-# The location of the default character device connected to the KVM/QEMU host.
-DEFAULT_CHARACTER_DEVICE = '/dev/vport0p1'
-
 
 class GuestAgent(NegotiatorInterface):
 
     """Implementation of the daemon running inside KVM/QEMU guests."""
 
-    def __init__(self, character_device=DEFAULT_CHARACTER_DEVICE):
+    def __init__(self, character_device=None):
         """
         Initialize a negotiator guest agent.
 
         :param character_device: The absolute pathname of the character device
                                  that we should use to connect to the host (a
-                                 string).
+                                 string). By default the appropriate character
+                                 device is automatically selected based on
+                                 ``/sys/class/virtio-ports/*/name``.
         """
+        if not character_device:
+            root = '/sys/class/virtio-ports'
+            logger.debug("Automatically selecting appropriate character device based on %s ..", root)
+            for entry in os.listdir(root):
+                name_file = os.path.join(root, entry, 'name')
+                if os.path.isfile(name_file):
+                    with open(name_file) as handle:
+                        contents = handle.read().strip()
+                    if contents == DEFAULT_CHANNEL_NAME:
+                        character_device = '/dev/%s' % entry
+                        logger.debug("Selected character device: %s", character_device)
+                        break
+            else:
+                logger.warning("Automatic character device selection failed! (falling back to default %s)",
+                               DEFAULT_CHARACTER_DEVICE)
+                character_device = DEFAULT_CHARACTER_DEVICE
         # Initialize the super class, passing it a file like object connected
         # to the character device in read/write mode.
         super(GuestAgent, self).__init__(handle=open(character_device, 'r+'),
