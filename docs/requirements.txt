@@ -1,3 +1,3 @@
--e common
--e host
--e guest
+-e ./common
+-e ./host
+-e ./guest
