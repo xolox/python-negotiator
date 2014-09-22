@@ -3,7 +3,7 @@
 # Setup script for the `negotiator-guest' package.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 21, 2014
+# Last Change: September 22, 2014
 # URL: https://negotiator.readthedocs.org
 
 """Setup script for the ``negotiator-guest`` package."""
@@ -28,10 +28,14 @@ for line in open(module, 'r'):
 else:
     raise Exception("Failed to extract version from %s!" % module)
 
-# Fill in the long description (for the benefit of PyPi)
+# Fill in the long description (for the benefit of PyPI)
 # with the contents of README.rst (rendered by GitHub).
-readme_file = os.path.join(source_directory, 'README.rst')
-readme_text = open(readme_file, 'r').read()
+try:
+    readme_file = os.path.join(source_directory, 'README.rst')
+    readme_text = open(readme_file, 'r').read()
+except IOError:
+    # This happens on readthedocs.org.
+    readme_text = ''
 
 setup(name='negotiator-guest',
       version=version_string,
