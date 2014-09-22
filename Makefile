@@ -49,8 +49,8 @@ docs: install
 publish:
 	git push origin && git push --tags origin
 	make clean
-	for package in common host guest; do \
-		cp README.rst $$package; \
+	set -e; for package in common host guest; do \
+		cp $(CURDIR)/README.rst $(CURDIR)/$$package; \
 		cd $(CURDIR)/$$package; \
 		python setup.py sdist upload; \
 		rm README.rst; \
