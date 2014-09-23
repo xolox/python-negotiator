@@ -1,7 +1,7 @@
 # Makefile for negotiator.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 22, 2014
+# Last Change: September 23, 2014
 # URL: https://github.com/xolox/negotiator
 
 SHELL = bash
@@ -61,4 +61,4 @@ clean:
 	rm -Rf docs/{_{build,static,templates},build}
 	find -type f -name '*.pyc' -delete
 
-.PHONY: default install reset check publish clean
+.PHONY: default install reset check docs publish clean
