@@ -1,7 +1,7 @@
 # Generic QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 22, 2014
+# Last Change: September 23, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -19,7 +19,9 @@ Supported options:
 
   -c, --character-device=PATH
 
-    Set the absolute pathname of the character device that's used to
+    By default the appropriate character device is automatically selected based
+    on /sys/class/virtio-ports/*/name. If the automatic selection doesn't work,
+    you can set the absolute pathname of the character device that's used to
     communicate with the negotiator-host daemon running on the KVM/QEMU host.
 
   -v, --verbose
