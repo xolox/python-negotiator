@@ -76,7 +76,12 @@ class HostDaemon(object):
 
 class AutomaticGuestChannel(multiprocessing.Process):
 
-    """Thin wrapper for :py:class:`GuestChannel` that puts it in a separate process."""
+    """
+    Thin wrapper for :py:class:`GuestChannel` that puts it in a separate process.
+
+    Uses :py:class:`multiprocessing.Process` to isolate guest channels in
+    separate processes.
+    """
 
     def __init__(self, *args, **kw):
         """
@@ -100,12 +105,8 @@ class GuestChannel(NegotiatorInterface):
     """
     The host side of the channel connecting KVM/QEMU hosts and guests.
 
-    The documentation of this class defines no public methods although
-    :py:class:`GuestChannel` is the external API of the negotiator project. The
-    reason for this is that calls to unknown :py:class:`GuestChannel` methods
-    are automatically relayed to the remote side running on a KVM/QEMU guest.
-    For this reason you should refer to the public methods implemented by the
-    :py:class:`.GuestAgent` class.
+    See also :py:class:`AutomaticGuestChannel` which wraps
+    :py:class`GuestChannel` and puts it in its own process.
     """
 
     def __init__(self, guest_name, unix_socket=None):

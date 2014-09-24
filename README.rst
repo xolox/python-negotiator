@@ -128,7 +128,9 @@ expected.
    have to actually stop the guest and then start it again!
 
 4. Now go and create some scripts in ``/usr/lib/negotiator/commands`` and try
-   to execute them from the other side!
+   to execute them from the other side! Note that scripts on the KVM/QEMU side
+   can use the environment variable ``$NEGOTIATOR_GUEST`` to get the name of
+   the guest that invoked them.
 
 Debugging
 ---------
