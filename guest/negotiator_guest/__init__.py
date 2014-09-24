@@ -21,7 +21,7 @@ from negotiator_common import NegotiatorInterface
 from negotiator_common.utils import compact
 
 # Semi-standard module versioning.
-__version__ = '0.5.1'
+__version__ = '0.5.2'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)

@@ -1,7 +1,7 @@
 # Makefile for negotiator.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 23, 2014
+# Last Change: September 24, 2014
 # URL: https://github.com/xolox/negotiator
 
 SHELL = bash
@@ -28,7 +28,9 @@ install:
 	$(ACTIVATE) && pip uninstall -y negotiator-host || true
 	$(ACTIVATE) && pip uninstall -y negotiator-guest || true
 	$(ACTIVATE) && pip uninstall -y negotiator-common || true
-	$(ACTIVATE) && pip-accel install --editable ./common ./host ./guest
+	$(ACTIVATE) && pip-accel install --editable ./common
+	$(ACTIVATE) && pip-accel install --editable ./host
+	$(ACTIVATE) && pip-accel install --editable ./guest
 
 reset:
 	rm -Rf "$(VIRTUAL_ENV)"

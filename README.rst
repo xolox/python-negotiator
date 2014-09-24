@@ -34,59 +34,71 @@ so won't be changed.
 On KVM/QEMU hosts
 ~~~~~~~~~~~~~~~~~
 
-Here's how to install the negotiator-host_ package on your host(s)::
+Here's how to install the negotiator-host_ package on your host(s):
 
-  sudo pip install negotiator-host
+.. code-block:: bash
 
-If you prefer you can install the Python package in a virtual environment::
+   $ sudo pip install negotiator-host
 
-  sudo apt-get install --yes python-virtualenv
-  virtualenv /tmp/negotiator-host
-  source /tmp/negotiator-host/bin/activate
-  pip install negotiator-host
+If you prefer you can install the Python package in a virtual environment:
+
+.. code-block:: bash
+
+   $ sudo apt-get install --yes python-virtualenv
+   $ virtualenv /tmp/negotiator-host
+   $ source /tmp/negotiator-host/bin/activate
+   $ pip install negotiator-host
 
 After installation the ``negotiator-host`` program is available. The usage
 message will help you get started, try the ``--help`` option. Now you need to
 find a way to run the ``negotiator-host`` command as a daemon. I have good
-experiences with ``supervisord``, here's how to set that up::
+experiences with ``supervisord``, here's how to set that up:
 
-  sudo apt-get install --yes supervisor
-  cat > /etc/supervisor/conf.d/negotiator-host.conf << EOF
-  [program:negotiator-host]
-  command = /usr/local/bin/negotiator-host --daemon
-  autostart = True
-  redirect_stderr = True
-  stdout_logfile = /var/log/negotiator-host.log
-  EOF
-  supervisorctl update negotiator-host
+.. code-block:: bash
+
+   $ sudo apt-get install --yes supervisor
+   $ sudo tee /etc/supervisor/conf.d/negotiator-host.conf >/dev/null << EOF
+   [program:negotiator-host]
+   command = /usr/local/bin/negotiator-host --daemon
+   autostart = True
+   redirect_stderr = True
+   stdout_logfile = /var/log/negotiator-host.log
+   EOF
+   $ sudo supervisorctl update negotiator-host
 
 On KVM/QEMU guests
 ~~~~~~~~~~~~~~~~~~
 
-Install the negotiator-guest_ package on your guest(s)::
+Install the negotiator-guest_ package on your guest(s):
 
-  sudo pip install negotiator-guest
+.. code-block:: bash
 
-If you prefer you can install the Python package in a virtual environment::
+   $ sudo pip install negotiator-guest
 
-  sudo apt-get install --yes python-virtualenv
-  virtualenv /tmp/negotiator-guest
-  source /tmp/negotiator-guest/bin/activate
-  pip install negotiator-guest
+If you prefer you can install the Python package in a virtual environment:
+
+.. code-block:: bash
+
+   $ sudo apt-get install --yes python-virtualenv
+   $ virtualenv /tmp/negotiator-guest
+   $ source /tmp/negotiator-guest/bin/activate
+   $ pip install negotiator-guest
 
 After installation you need to find a way to run the ``negotiator-guest``
 command as a daemon. I have good experiences with ``supervisord``, here's how
-to set that up::
+to set that up:
 
-  sudo apt-get install --yes supervisor
-  cat > /etc/supervisor/conf.d/negotiator-guest.conf << EOF
-  [program:negotiator-guest]
-  command = /usr/local/bin/negotiator-guest --daemon
-  autostart = True
-  redirect_stderr = True
-  stdout_logfile = /var/log/negotiator-guest.log
-  EOF
-  supervisorctl update negotiator-guest
+.. code-block:: bash
+
+   $ sudo apt-get install --yes supervisor
+   $ sudo tee /etc/supervisor/conf.d/negotiator-guest.conf >/dev/null << EOF
+   [program:negotiator-guest]
+   command = /usr/local/bin/negotiator-guest --daemon
+   autostart = True
+   redirect_stderr = True
+   stdout_logfile = /var/log/negotiator-guest.log
+   EOF
+   $ sudo supervisorctl update negotiator-guest
 
 Getting started
 ---------------
@@ -99,30 +111,36 @@ expected.
    by editing the guest's XML definition file. On Ubuntu Linux KVM/QEMU hosts
    these files are found in the directory ``/etc/libvirt/qemu``. Open the file
    in your favorite text editor (Vim? :-) and add the the following XML snippet
-   inside the ``<devices>`` section::
+   inside the ``<devices>`` section:
 
-     <channel type='unix'>
-        <source mode='bind' />
-        <target type='virtio' name='negotiator-host-to-guest.0' />
-     </channel>
+   .. code-block:: xml
 
-     <channel type='unix'>
-        <source mode='bind' />
-        <target type='virtio' name='negotiator-guest-to-host.0' />
-     </channel>
+      <channel type='unix'>
+         <source mode='bind' />
+         <target type='virtio' name='negotiator-host-to-guest.0' />
+      </channel>
+
+      <channel type='unix'>
+         <source mode='bind' />
+         <target type='virtio' name='negotiator-guest-to-host.0' />
+      </channel>
 
    You don't have to supply channel source path attributes, they should be
    filled in automatically by KVM/QEMU/libvirt when it notices that you've
    added the devices (in step 2).
 
-2. After adding the configuration snippet you have to activate it::
+2. After adding the configuration snippet you have to activate it:
 
-     virsh define /etc/libvirt/qemu/NAME-OF-GUEST.xml
+   .. code-block:: bash
 
-3. Now you need to shut down the guest and then start it again::
+      $ sudo virsh define /etc/libvirt/qemu/NAME-OF-GUEST.xml
 
-     virsh shutdown --mode acpi NAME-OF-GUEST
-     virsh start NAME-OF-GUEST
+3. Now you need to shut down the guest and then start it again:
+
+   .. code-block:: bash
+
+      $ sudo virsh shutdown --mode acpi NAME-OF-GUEST
+      $ sudo virsh start NAME-OF-GUEST
 
    Note that just rebooting the guest will not add the new virtual devices, you
    have to actually stop the guest and then start it again!
@@ -144,33 +162,37 @@ Broken channels on KVM/QEMU hosts
 Whether you want to get the official QEMU guest agent or the Negotiator project
 running, you will need a working bidirectional channel. I'm testing Negotiator
 on an Ubuntu 14.04 KVM/QEMU host and I needed several changes to get things
-working properly::
+working properly:
 
-  CHANNELS_DIRECTORY=/var/lib/libvirt/qemu/channel/target
-  sudo mkdir -p $CHANNELS_DIRECTORY
-  sudo chown libvirt-qemu:kvm $CHANNELS_DIRECTORY
+.. code-block:: bash
 
-The above should be done by KVM/QEMU if you ask me, but anyway. On top of this
-if you are running Ubuntu with AppArmor enabled (the default) you will need to
-apply the following patch::
+   $ CHANNELS_DIRECTORY=/var/lib/libvirt/qemu/channel/target
+   $ sudo mkdir -p $CHANNELS_DIRECTORY
+   $ sudo chown libvirt-qemu:kvm $CHANNELS_DIRECTORY
 
-  root@trusty-kvm-host# diff -u /etc/apparmor.d/abstractions/libvirt-qemu.orig /etc/apparmor.d/abstractions/libvirt-qemu
-  --- /etc/apparmor.d/abstractions/libvirt-qemu.orig      2014-09-19 12:46:54.316593334 +0200
-  +++ /etc/apparmor.d/abstractions/libvirt-qemu   2014-09-24 14:43:43.642064576 +0200
-  @@ -49,6 +49,9 @@
-     /run/shm/ r,
-     owner /run/shm/spice.* rw,
+The above should be done by the KVM/QEMU system packages if you ask me, but
+anyway. On top of this if you are running Ubuntu with AppArmor enabled (the
+default) you may need to apply the following patch:
 
-  +  # Local modification to enable the QEMU guest agent.
-  +  owner /var/lib/libvirt/qemu/channel/target/* rw,
-  +
-     # 'kill' is not required for sound and is a security risk. Do not enable
-     # unless you absolutely need it.
-     deny capability kill,
+.. code-block:: bash
 
-Again this should just be part of the KVM/QEMU packages, but whatever. The
-Negotiator project is playing with new-ish functionality so I pretty much know
-to expect sharp edges :-)
+   $ diff -u /etc/apparmor.d/abstractions/libvirt-qemu.orig /etc/apparmor.d/abstractions/libvirt-qemu
+   --- /etc/apparmor.d/abstractions/libvirt-qemu.orig      2014-09-19 12:46:54.316593334 +0200
+   +++ /etc/apparmor.d/abstractions/libvirt-qemu   2014-09-24 14:43:43.642064576 +0200
+   @@ -49,6 +49,9 @@
+      /run/shm/ r,
+      owner /run/shm/spice.* rw,
+
+   +  # Local modification to enable the QEMU guest agent.
+   +  owner /var/lib/libvirt/qemu/channel/target/* rw,
+   +
+      # 'kill' is not required for sound and is a security risk. Do not enable
+      # unless you absolutely need it.
+      deny capability kill,
+
+Again this should just be part of the KVM/QEMU system packages, but whatever.
+The Negotiator project is playing with new-ish functionality so I pretty much
+know to expect sharp edges :-)
 
 Character device detection fails
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -231,9 +253,10 @@ official QEMU guest agent does:
 Contact
 -------
 
-The latest version of ``negotiator`` is available on PyPI_ and GitHub_. For bug
-reports please create an issue on GitHub_. If you have questions, suggestions,
-etc. feel free to send me an e-mail at `peter@peterodding.com`_.
+The latest version of ``negotiator`` is available on PyPI_ and GitHub_. You can
+find the documentation on `Read The Docs`_. For bug reports please create an
+issue on GitHub_. If you have questions, suggestions, etc. feel free to send me
+an e-mail at `peter@peterodding.com`_.
 
 License
 -------
@@ -252,4 +275,5 @@ This software is licensed under the `MIT license`_.
 .. _official guest agent: http://wiki.libvirt.org/page/Qemu_guest_agent
 .. _peter@peterodding.com: peter@peterodding.com
 .. _PyPI: https://pypi.python.org/pypi/negotiator-host
+.. _Read The Docs: http://negotiator.readthedocs.org/en/latest/
 .. _the same mechanism: http://www.linux-kvm.org/page/VMchannel_Requirements
