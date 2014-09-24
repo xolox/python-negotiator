@@ -50,5 +50,5 @@ setup(name='negotiator-host',
       ]),
       install_requires=[
           'coloredlogs >= 0.6',
-          'negotiator-common >= 0.2.1',
+          'negotiator-common >= 0.5',
       ])

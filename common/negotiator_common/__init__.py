@@ -1,7 +1,7 @@
 # Generic QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 22, 2014
+# Last Change: September 24, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -22,13 +22,18 @@ while avoiding code duplication.
 # Standard library modules.
 import json
 import logging
+import os
 import time
 
+# External dependencies.
+from executor import execute
+
 # Modules included in our package.
-from negotiator_common.utils import compact
+from negotiator_common.utils import compact, format_call
+from negotiator_common.config import BUILTIN_COMMANDS_DIRECTORY, USER_COMMANDS_DIRECTORY
 
 # Semi-standard module versioning.
-__version__ = '0.2.1'
+__version__ = '0.5'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -56,6 +61,14 @@ class NegotiatorInterface(object):
         """
         self.conn_handle = handle
         self.conn_label = label
+        # Somewhere in the Python installation process the executable bits of
+        # the built-in scripts get lost. This is a pragmatic hack to compensate
+        # for that.
+        for entry in os.listdir(BUILTIN_COMMANDS_DIRECTORY):
+            pathname = os.path.join(BUILTIN_COMMANDS_DIRECTORY, entry)
+            if os.path.isfile(pathname) and not os.access(pathname, os.X_OK):
+                logger.debug("Making %s executable ..", pathname)
+                os.chmod(pathname, 0o755)
 
     def raw_read(self, num_bytes):
         """
@@ -79,10 +92,7 @@ class NegotiatorInterface(object):
                   available this may return a value that evaluates to ``False``
                   instead of blocking.
         """
-        logger.debug("Preparing to read line from %s ..", self.conn_label)
-        data = self.conn_handle.readline()
-        logger.debug("Read line from %s: %r", self.conn_label, data)
-        return data
+        return self.conn_handle.readline()
 
     def raw_write(self, data):
         """
@@ -157,8 +167,26 @@ class NegotiatorInterface(object):
         encoded_message = json.dumps(value)
         num_bytes = len(encoded_message)
         logger.debug("Sending message of %i bytes: %s", num_bytes, encoded_message)
-        self.raw_write("%i\n" % num_bytes)
-        self.raw_write(encoded_message)
+        self.raw_write("%i\n%s" % (num_bytes, encoded_message))
+
+    def call_remote_method(self, method, *args, **kw):
+        """
+        Call a method on the remote object.
+
+        :param method: The name of the method to call (a string).
+        :param args: The positional arguments for the method.
+        :param kw: The keyword arguments for the method.
+        :returns: The return value of the remote method.
+        """
+        logger.debug("Calling remote method %s ..", format_call(method, *args, **kw))
+        self.write(dict(method=method, args=args, kw=kw))
+        response = self.read()
+        if response['success']:
+            logger.debug("Remote method call was successful and returned result %r!", response['result'])
+            return response['result']
+        else:
+            logger.warning("Remote method call failed: %s", response['error'])
+            raise RemoteMethodFailed(response['error'])
 
     def enter_main_loop(self):
         """
@@ -191,36 +219,70 @@ class NegotiatorInterface(object):
         """
         while True:
             request = self.read()
-            command_name = request.get('command')
-            arguments = request.get('arguments', [])
-            keyword_arguments = request.get('keyword_arguments', {})
-            method = getattr(self, command_name, None)
-            if method and not command_name.startswith('_'):
+            method_name = request.get('method')
+            method = getattr(self, method_name, None)
+            args = request.get('args', [])
+            kw = request.get('kw', {})
+            if method and not method_name.startswith('_'):
                 try:
-                    self.write(dict(success=True, result=method(*arguments, **keyword_arguments)))
+                    logger.info("Remote is calling local method %s ..", format_call(method_name, *args, **kw))
+                    result = method(*args, **kw)
+                    logger.info("Local method call was successful and returned result %r.", result)
+                    self.write(dict(success=True, result=result))
                 except Exception as e:
-                    logger.exception("Swallowing an unexpected exception so we don't crash!")
-                    self.send(dict(success=False, error=str(e)))
+                    logger.exception("Swallowing unexpected exception during local method call so we don't crash!")
+                    self.write(dict(success=False, error=str(e)))
             else:
-                self.send(dict(success=False, error="Command %s not supported" % command_name))
+                logger.warning("Remote tried to call unsupported method %s!", method_name)
+                self.write(dict(success=False, error="Method %s not supported" % method_name))
 
-    def __getattr__(self, name):
+    def list_commands(self):
         """
-        Automatically proxy method invocations to the other side.
+        Find the names of the user defined commands.
 
-        :param name: The name of the remote method (a string).
-        :returns: A function that proxies to the other side.
+        :returns: A list of executable names (strings).
         """
-        def fake_method(*args, **kw):
-            self.write(dict(command=name, arguments=args, keyword_arguments=kw))
-            response = self.read()
-            if response['success']:
-                return response['result']
-            else:
-                raise Exception(response['error'])
-        return fake_method
+        commands = set()
+        for directory in (BUILTIN_COMMANDS_DIRECTORY, USER_COMMANDS_DIRECTORY):
+            if os.path.isdir(directory):
+                for entry in os.listdir(directory):
+                    pathname = os.path.join(directory, entry)
+                    if os.path.isfile(pathname) and os.access(pathname, os.X_OK):
+                        commands.add(entry)
+        return list(commands)
+
+    def prepare_environment(self):
+        """
+        Prepare environment variables for command execution.
+
+        This method can be overridden by sub classes to prepare environment
+        variables for external command execution.
+        """
+
+    def execute(self, *command, **options):
+        """
+        Execute a user defined or built-in command.
+
+        :param command: The command name and any arguments (one or more strings).
+        :param input: The input to feed to the command on its standard input
+                      stream (a string or ``None``).
+        :returns: The output of the command (a string) or ``None`` if the
+                  command exited with a nonzero exit code.
+        """
+        self.prepare_environment()
+        command_name = os.path.basename(command[0])
+        user_command = os.path.join(USER_COMMANDS_DIRECTORY, command_name)
+        builtin_command = os.path.join(BUILTIN_COMMANDS_DIRECTORY, command_name)
+        command = list(command)
+        command[0] = user_command if os.path.isfile(user_command) else builtin_command
+        return execute(*command, input=options.get('input', None), capture=True, logger=logger)
 
 
 class ProtocolError(Exception):
 
     """Exception that is raised when the communication protocol is violated."""
+
+
+class RemoteMethodFailed(Exception):
+
+    """Exception that is raised when a remote method call failed."""

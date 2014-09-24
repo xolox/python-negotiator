@@ -1,0 +1,7 @@
+#!/bin/bash -e
+
+# find-ip-addresses:
+# Find the IPv4 addresses in use. Prints one IP address per line in CIDR
+# notation. See also: http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation.
+
+ip addr show | grep '\<inet\>' | awk '{print $2}'

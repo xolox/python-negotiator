@@ -1,0 +1,7 @@
+#!/bin/bash -e
+
+# find-distribution-codename:
+# Prints the distribution codename (a string like `precise' in the case of
+# Ubuntu) using the lsb_release command.
+
+lsb_release --short --codename

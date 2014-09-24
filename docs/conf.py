@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# documentation build configuration file for the 'negotiator' package. This
-# file is execfile()d with the current directory set to its containing dir.
+"""Sphinx documentation build configuration file."""
 
 import os
 import sys
@@ -78,6 +75,7 @@ htmlhelp_basename = 'negotiatordoc'
 
 
 def setup(app):
+    """Instruct autodoc not to omit ``__init__()``."""
     # Based on http://stackoverflow.com/a/5599712/788200.
     app.connect('autodoc-skip-member', (lambda app, what, name, obj, skip, options:
                                         False if name == '__init__' else skip))

@@ -1,7 +1,7 @@
 # Generic QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 22, 2014
+# Last Change: September 24, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -12,25 +12,13 @@ guest agent daemon running inside the guests.
 
 Supported options:
 
-  -d, --find-distributor-id
+  -g, --list-guests
 
-    Find the distributor ID (a string like 'Ubuntu') of GUEST_NAME using the
-    lsb_release command and report the result on standard output.
+    List the names of the guests that have the appropriate channel.
 
-  -r, --find-distribution-release
+  -c, --list-commands
 
-    Find the distribution release (a string like '12.04') of GUEST_NAME using
-    the lsb_release command and report the result on standard output.
-
-  -c, --find-distribution-codename
-
-    Find the distribution codename (a string like 'precise') of GUEST_NAME
-    using the lsb_release command and report the result on standard output.
-
-  -i, --find-ip-addresses
-
-    Find the IP addresses of GUEST_NAME. The IP addresses are reported in CIDR
-    notation on standard output, each on a separate line.
+    List the commands that the guest exposes to its host.
 
   -e, --execute=COMMAND
 
@@ -38,6 +26,10 @@ Supported options:
     the command inside the guest is intercepted and copied to the standard
     output stream on the host. If the command exits with a nonzero status code
     the negotiator-host program will also exit with a nonzero status code.
+
+  -d, --daemon
+
+    Start the host daemon that answers real time requests from guests.
 
   -v, --verbose
 
@@ -63,7 +55,8 @@ import sys
 import coloredlogs
 
 # Modules included in our package.
-from negotiator_host import GuestChannel
+from negotiator_common.config import CHANNELS_DIRECTORY, HOST_TO_GUEST_CHANNEL_NAME
+from negotiator_host import HostDaemon, GuestChannel, find_available_channels
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -76,27 +69,23 @@ def main():
     # Parse the command line arguments.
     actions = []
     try:
-        options, arguments = getopt.getopt(sys.argv[1:], 'drcie:vqh', [
-            'find-distributor-id', 'find-distribution-release',
-            'find-distribution-codename', 'find-ip-addresses', 'execute=',
-            'verbose', 'quiet', 'help'
+        options, arguments = getopt.getopt(sys.argv[1:], 'gce:dvqh', [
+            'list-guests', 'list-commands', 'execute=', 'daemon', 'verbose',
+            'quiet', 'help'
         ])
         for option, value in options:
-            if option in ('-d', '--find-distributor-id'):
-                assert len(arguments) >= 1, "Please provide the name of a guest as the 1st positional argument!"
-                actions.append(functools.partial(print_result, arguments[0], 'find_distributor_id'))
-            elif option in ('-r', '--find-distribution-release'):
-                assert len(arguments) >= 1, "Please provide the name of a guest as the 1st positional argument!"
-                actions.append(functools.partial(print_result, arguments[0], 'find_distribution_release'))
-            elif option in ('-c', '--find-distribution-codename'):
-                assert len(arguments) >= 1, "Please provide the name of a guest as the 1st positional argument!"
-                actions.append(functools.partial(print_result, arguments[0], 'find_distribution_codename'))
-            elif option in ('-i', '--find-ip-addresses'):
-                assert len(arguments) >= 1, "Please provide the name of a guest as the 1st positional argument!"
-                actions.append(functools.partial(print_result, arguments[0], 'find_ip_addresses'))
+            if option in ('-g', '--list-guests'):
+                actions.append(print_guest_names)
+            elif option in ('-c', '--list-commands'):
+                assert len(arguments) == 1, \
+                    "Please provide the name of a guest as the 1st and only positional argument!"
+                actions.append(functools.partial(print_commands, arguments[0]))
             elif option in ('-e', '--execute'):
-                assert len(arguments) >= 1, "Please provide the name of a guest as the 1st positional argument!"
+                assert len(arguments) == 1, \
+                    "Please provide the name of a guest as the 1st and only positional argument!"
                 actions.append(functools.partial(execute_command, arguments[0], value))
+            elif option in ('-d', '--daemon'):
+                actions.append(HostDaemon)
             elif option in ('-v', '--verbose'):
                 coloredlogs.increase_verbosity()
             elif option in ('-q', '--quiet'):
@@ -124,22 +113,34 @@ def usage():
     print(__doc__.strip())
 
 
+def print_guest_names():
+    """Print the names of the guests that Negotiator can connect with."""
+    channels = find_available_channels(CHANNELS_DIRECTORY, HOST_TO_GUEST_CHANNEL_NAME)
+    print('\n'.join(sorted(channels.keys())))
+
+
+def print_commands(guest_name):
+    """Print the commands supported by the guest."""
+    channel = GuestChannel(guest_name=guest_name)
+    print('\n'.join(sorted(channel.call_remote_method('list_commands'))))
+
+
 def print_result(guest_name, method_name):
     """Print the result of a remote method invoked on the named guest's channel."""
     channel = GuestChannel(guest_name=guest_name)
     method = getattr(channel, method_name)
     result = method()
     if isinstance(result, list):
-        print('\n'.join(channel.find_ip_addresses()))
-    else:
-        print(result)
+        result = '\n'.join(result)
+    print(result.rstrip())
 
 
 def execute_command(guest_name, command_line):
     """Execute a command inside the named guest."""
     channel = GuestChannel(guest_name=guest_name)
     try:
-        print(channel.execute(*shlex.split(command_line), capture=True))
+        output = channel.call_remote_method('execute', *shlex.split(command_line), capture=True)
+        print(output.rstrip())
     except Exception:
         logger.exception("Caught unexpected exception during remote command execution!")
         sys.exit(1)

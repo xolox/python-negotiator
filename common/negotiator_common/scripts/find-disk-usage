@@ -1,0 +1,10 @@
+#!/bin/bash -e
+
+# find-disk-usage:
+# Find the disk usage of all mounted disk devices.
+
+df -B 1 | while read device_file bytes_total bytes_used bytes_available percentage_used mount_point; do
+  if [[ $device_file =~ ^/dev/ ]] && [[ $mount_point =~ ^/ ]]; then
+    echo $device_file $mount_point $bytes_total $bytes_used
+  fi
+done

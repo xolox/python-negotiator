@@ -1,36 +1,39 @@
 # Generic QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 22, 2014
+# Last Change: September 24, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
 ``negotiator_common.config`` - Configuration defaults
 =====================================================
 
-.. data:: DEFAULT_CHANNEL_NAME
+.. data:: CHANNELS_DIRECTORY
 
-   The name that's used to identify the host and guest side of each channel.
-   Defaults to ``negotiator-channel.0``.
+   The pathname of the directory containing the host side of each channel.
+   Defaults to ``/var/lib/libvirt/qemu/channel/target``.
 
-.. data:: DEFAULT_CHANNEL_DIRECTORY
+.. data:: USER_COMMANDS_DIRECTORY
 
-   The directory containing the host side of each channel. Defaults to
-   ``/var/lib/libvirt/qemu/channel/target``.
+   The pathname of the directory containing user defined commands that 'the
+   other side' can invoke through Negotiator. Defaults to
+   ``/usr/lib/negotiator/commands``.
 
-.. data:: DEFAULT_CHARACTER_DEVICE
+.. data:: GUEST_TO_HOST_CHANNEL_NAME
 
-   The absolute pathname of the character device inside guests. Only used if
-   automatic selection fails (which shouldn't happen). Defaults to
-   ``/dev/vport0p1``.
+   The name of the channel that's used for communication initiated by the
+   guest. Defaults to ``negotiator-guest-to-host.0``.
+
+.. data:: HOST_TO_GUEST_CHANNEL_NAME
+
+   The name of the channel that's used for communication initiated by the
+   host. Defaults to ``negotiator-host-to-guest.0``.
 """
 
-# The location of the default character device connected to the KVM/QEMU host.
-DEFAULT_CHARACTER_DEVICE = '/dev/vport0p1'
+import os
 
-# The location of the directory containing the UNIX sockets created by QEMU.
-DEFAULT_CHANNEL_DIRECTORY = '/var/lib/libvirt/qemu/channel/target'
-
-# The filename suffix of the UNIX sockets created by QEMU. This is the channel
-# target name in the QEMU guest configuration.
-DEFAULT_CHANNEL_NAME = 'negotiator-channel.0'
+CHANNELS_DIRECTORY = '/var/lib/libvirt/qemu/channel/target'
+USER_COMMANDS_DIRECTORY = '/usr/lib/negotiator/commands'
+BUILTIN_COMMANDS_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts')
+GUEST_TO_HOST_CHANNEL_NAME = 'negotiator-guest-to-host.0'
+HOST_TO_GUEST_CHANNEL_NAME = 'negotiator-host-to-guest.0'
