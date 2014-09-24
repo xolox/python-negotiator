@@ -3,7 +3,7 @@
 # Setup script for the `negotiator-host' package.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 22, 2014
+# Last Change: September 24, 2014
 # URL: https://negotiator.readthedocs.org
 
 """Setup script for the ``negotiator-host`` package."""
@@ -51,4 +51,28 @@ setup(name='negotiator-host',
       install_requires=[
           'coloredlogs >= 0.6',
           'negotiator-common >= 0.5',
+      ],
+      classifiers=[
+          'Development Status :: 4 - Beta',
+          'Environment :: Console',
+          'Intended Audience :: Developers',
+          'Intended Audience :: Information Technology',
+          'Intended Audience :: System Administrators',
+          'License :: OSI Approved :: MIT License',
+          'Operating System :: POSIX',
+          'Operating System :: POSIX :: Linux',
+          'Operating System :: Unix',
+          'Programming Language :: Python',
+          'Programming Language :: Python :: 2',
+          'Programming Language :: Python :: 2.6',
+          'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3',
+          'Programming Language :: Python :: 3.4',
+          'Topic :: Communications',
+          'Topic :: Software Development',
+          'Topic :: System',
+          'Topic :: System :: Installation/Setup',
+          'Topic :: System :: Operating System',
+          'Topic :: System :: Operating System Kernels :: Linux',
+          'Topic :: System :: Systems Administration',
       ])
