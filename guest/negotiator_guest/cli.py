@@ -1,4 +1,4 @@
-# Generic QEMU guest agent in Python.
+# Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
 # Last Change: September 24, 2014

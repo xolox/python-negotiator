@@ -1,10 +1,15 @@
-Generic KVM/QEMU guest agent implemented in Python
-==================================================
+Scriptable KVM/QEMU guest agent implemented in Python
+=====================================================
 
 The Python packages negotiator-host_, negotiator-guest_ and negotiator-common_
-together implement a generic KVM/QEMU guest agent infrastructure in Python.
-This infrastructure enables realtime bidirectional communication between hosts
-and guests which allows user defined metadata to be transferred between them.
+together implement a scriptable KVM/QEMU guest agent infrastructure in Python.
+This infrastructure supports realtime bidirectional communication between hosts
+and guests which allows the hosts and guests to invoke user defined commands on
+'the other side'.
+
+Because the user defines the commands that hosts and guests can execute, the
+user controls the amount of influence that hosts and guests have over each
+other (there are several built-in commands, these are all read only).
 
 .. contents::
 
@@ -239,7 +244,7 @@ words the two projects share a lot of ideas but have very different goals.
 How does it work?
 -----------------
 
-The generic guest agent infrastructure uses `the same mechanism`_ that the
+The scriptable guest agent infrastructure uses `the same mechanism`_ that the
 official QEMU guest agent does:
 
 - Inside the guest special character devices are created that allow reading and

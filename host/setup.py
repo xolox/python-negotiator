@@ -39,7 +39,7 @@ except IOError:
 
 setup(name='negotiator-host',
       version=version_string,
-      description="Generic QEMU guest agent (host side of things)",
+      description="Scriptable KVM/QEMU guest agent (host side of things)",
       long_description=readme_text,
       url='https://negotiator.readthedocs.org',
       author="Peter Odding",
