@@ -106,7 +106,7 @@ class GuestChannel(NegotiatorInterface):
     The host side of the channel connecting KVM/QEMU hosts and guests.
 
     See also :py:class:`AutomaticGuestChannel` which wraps
-    :py:class`GuestChannel` and puts it in its own process.
+    :py:class:`GuestChannel` and puts it in its own process.
     """
 
     def __init__(self, guest_name, unix_socket=None):
