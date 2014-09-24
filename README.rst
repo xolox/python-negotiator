@@ -129,8 +129,8 @@ expected.
 
 4. Now go and create some scripts in ``/usr/lib/negotiator/commands`` and try
    to execute them from the other side! Once you start writing your own
-   commands it's useful to know that commands on the KVM/QEMU side have access
-   to some `environment variables`_.
+   commands it's useful to know that commands on the KVM/QEMU host side have
+   access to some `environment variables`_.
 
 Debugging
 ---------
