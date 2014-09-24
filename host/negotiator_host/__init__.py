@@ -116,8 +116,6 @@ class GuestChannel(NegotiatorInterface):
         :param guest_name: The name of the guest to connect to (a string).
         :param unix_socket: The absolute pathname of the UNIX socket that we
                             should connect to (a string, optional).
-        :raises: :py:exc:`exceptions.ValueError` when neither ``guest_name``
-                 nor ``unix_socket`` is given.
         """
         self.guest_name = guest_name
         # Figure out the absolute pathname of the UNIX socket?
@@ -135,7 +133,14 @@ class GuestChannel(NegotiatorInterface):
                                            label="UNIX socket %s" % unix_socket)
 
     def prepare_environment(self):
-        """Prepare environment variables for command execution."""
+        """
+        Prepare environment variables for command execution on KVM/QEMU hosts.
+
+        The following environment variables are currently exposed to commands:
+
+        ``$NEGOTIATOR_GUEST``
+          The name of the KVM/QEMU guest that invoked the command.
+        """
         os.environ['NEGOTIATOR_GUEST'] = self.guest_name
 
 

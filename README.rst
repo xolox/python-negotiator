@@ -128,9 +128,9 @@ expected.
    have to actually stop the guest and then start it again!
 
 4. Now go and create some scripts in ``/usr/lib/negotiator/commands`` and try
-   to execute them from the other side! Note that scripts on the KVM/QEMU side
-   can use the environment variable ``$NEGOTIATOR_GUEST`` to get the name of
-   the guest that invoked them.
+   to execute them from the other side! Once you start writing your own
+   commands it's useful to know that commands on the KVM/QEMU side have access
+   to some `environment variables`_.
 
 Debugging
 ---------
@@ -243,6 +243,7 @@ This software is licensed under the `MIT license`_.
 © 2014 Peter Odding.
 
 .. External references:
+.. _environment variables: http://negotiator.readthedocs.org/en/latest/#negotiator_host.GuestChannel.prepare_environment
 .. _GitHub: https://github.com/xolox/python-negotiator
 .. _MIT license: http://en.wikipedia.org/wiki/MIT_License
 .. _negotiator-common: https://pypi.python.org/pypi/negotiator-common
