@@ -121,31 +121,32 @@ expected.
    .. code-block:: xml
 
       <channel type='unix'>
-         <source mode='bind' />
+         <source mode='bind' path='/var/lib/libvirt/qemu/channel/target/GUEST_NAME.negotiator-host-to-guest.0' />
          <target type='virtio' name='negotiator-host-to-guest.0' />
       </channel>
 
       <channel type='unix'>
-         <source mode='bind' />
+         <source mode='bind' path='/var/lib/libvirt/qemu/channel/target/GUEST_NAME.negotiator-guest-to-host.0' />
          <target type='virtio' name='negotiator-guest-to-host.0' />
       </channel>
 
-   You don't have to supply channel source path attributes, they should be
-   filled in automatically by KVM/QEMU/libvirt when it notices that you've
-   added the devices (in step 2).
+   Replace ``GUEST_NAME`` with the name of your guest in both places. If you
+   use libvirt 1.0.6 or newer (you can check with ``virsh --version``) you can
+   omit the ``path='...'`` attribute because libvirt will fill it in
+   automatically when it reloads the guest's XML definition file (in step 2).
 
 2. After adding the configuration snippet you have to activate it:
 
    .. code-block:: bash
 
-      $ sudo virsh define /etc/libvirt/qemu/NAME-OF-GUEST.xml
+      $ sudo virsh define /etc/libvirt/qemu/GUEST_NAME.xml
 
 3. Now you need to shut down the guest and then start it again:
 
    .. code-block:: bash
 
-      $ sudo virsh shutdown --mode acpi NAME-OF-GUEST
-      $ sudo virsh start NAME-OF-GUEST
+      $ sudo virsh shutdown --mode acpi GUEST_NAME
+      $ sudo virsh start GUEST_NAME
 
    Note that just rebooting the guest will not add the new virtual devices, you
    have to actually stop the guest and then start it again!
