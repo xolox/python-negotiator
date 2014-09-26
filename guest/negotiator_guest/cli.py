@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 24, 2014
+# Last Change: September 26, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -56,6 +56,7 @@ import sys
 
 # External dependencies.
 import coloredlogs
+from humanfriendly import Timer
 
 # Modules included in our project.
 from negotiator_common.config import GUEST_TO_HOST_CHANNEL_NAME, HOST_TO_GUEST_CHANNEL_NAME
@@ -112,7 +113,9 @@ def main():
         elif list_commands:
             print('\n'.join(ga.call_remote_method('list_commands')))
         elif execute_command:
+            timer = Timer()
             output = ga.call_remote_method('execute', *shlex.split(execute_command), capture=True)
+            logger.debug("Took %s to execute remote command.", timer)
             print(output.rstrip())
     except Exception:
         logger.exception("Caught a fatal exception! Terminating ..")

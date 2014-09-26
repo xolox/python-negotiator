@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 24, 2014
+# Last Change: September 26, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -23,17 +23,17 @@ while avoiding code duplication.
 import json
 import logging
 import os
-import time
 
 # External dependencies.
 from executor import execute
+from humanfriendly import Timer
 
-# Modules included in our package.
+# Modules included in our project.
 from negotiator_common.utils import compact, format_call
 from negotiator_common.config import BUILTIN_COMMANDS_DIRECTORY, USER_COMMANDS_DIRECTORY
 
 # Semi-standard module versioning.
-__version__ = '0.5.2'
+__version__ = '0.6'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -75,9 +75,7 @@ class NegotiatorInterface(object):
         Read the given number of bytes from the remote side.
 
         :param num_bytes: The number of bytes to read (an integer).
-        :returns: The data read from the remote side (a string). If no data is
-                  available this may return a value that evaluates to ``False``
-                  instead of blocking.
+        :returns: The data read from the remote side (a string).
         """
         logger.debug("Preparing to read %i bytes from %s ..", num_bytes, self.conn_label)
         data = self.conn_handle.read(num_bytes)
@@ -88,11 +86,12 @@ class NegotiatorInterface(object):
         """
         Read a newline terminated string from the remote side.
 
-        :returns: The data read from the remote side (a string). If no data is
-                  available this may return a value that evaluates to ``False``
-                  instead of blocking.
+        :returns: The data read from the remote side (a string).
         """
-        return self.conn_handle.readline()
+        logger.debug("Preparing to read line from %s ..", self.conn_label)
+        data = self.conn_handle.readline()
+        logger.debug("Read %i bytes from %s: %r", len(data), self.conn_label, data)
+        return data
 
     def raw_write(self, data):
         """
@@ -123,40 +122,32 @@ class NegotiatorInterface(object):
                  defined protocol.
         """
         logger.debug("Waiting for message from other side ..")
-        while True:
-            # Wait for a line containing an integer byte count.
-            line = self.raw_readline().strip()
-            # If there is no remote side the read call might not block and
-            # instead return a value that evaluates to False.
-            if not line:
-                # Because we can't rely on the read call to block we have to
-                # avoid taxing the CPU in a busy loop that performs thousands
-                # of read calls per second :-).
-                time.sleep(0.25)
-            elif not line.isdigit():
-                # Complain loudly about protocol errors :-).
+        # Wait for a line containing an integer byte count.
+        line = self.raw_readline().strip()
+        if not line.isdigit():
+            # Complain loudly about protocol errors :-).
+            raise ProtocolError(compact("""
+                Received invalid input from remote side! I was expecting a
+                byte count, but what I got instead was the line {input}!
+            """, input=repr(line)))
+        else:
+            # First we get a line containing a byte count, then we read
+            # that number of bytes from the remote side and decode it as a
+            # JSON encoded message.
+            num_bytes = int(line, 10)
+            logger.debug("Reading message of %i bytes ..", num_bytes)
+            encoded_value = self.raw_read(num_bytes)
+            try:
+                decoded_value = json.loads(encoded_value)
+                logger.debug("Parsed message: %s", decoded_value)
+                return decoded_value
+            except Exception as e:
+                logger.exception("Failed to parse JSON formatted message!")
                 raise ProtocolError(compact("""
-                    Received invalid input from remote side! I was expecting a
-                    byte count, but what I got instead was the line {input}!
-                """, input=repr(line)))
-            else:
-                # First we get a line containing a byte count, then we read
-                # that number of bytes from the remote side and decode it as a
-                # JSON encoded message.
-                num_bytes = int(line, 10)
-                logger.debug("Reading message of %i bytes ..", num_bytes)
-                encoded_value = self.raw_read(num_bytes)
-                try:
-                    decoded_value = json.loads(encoded_value)
-                    logger.debug("Parsed message: %s", decoded_value)
-                    return decoded_value
-                except Exception as e:
-                    logger.exception("Failed to parse JSON formatted message!")
-                    raise ProtocolError(compact("""
-                        Failed to decode message from remote side as JSON!
-                        Tried to decode message {message}. Original error:
-                        {error}.
-                    """, message=repr(encoded_value), error=str(e)))
+                    Failed to decode message from remote side as JSON!
+                    Tried to decode message {message}. Original error:
+                    {error}.
+                """, message=repr(encoded_value), error=str(e)))
 
     def write(self, value):
         """
@@ -178,14 +169,15 @@ class NegotiatorInterface(object):
         :param kw: The keyword arguments for the method.
         :returns: The return value of the remote method.
         """
+        timer = Timer()
         logger.debug("Calling remote method %s ..", format_call(method, *args, **kw))
         self.write(dict(method=method, args=args, kw=kw))
         response = self.read()
         if response['success']:
-            logger.debug("Remote method call was successful and returned result %r!", response['result'])
+            logger.debug("Remote method call succeeded in %s and returned %r!", timer, response['result'])
             return response['result']
         else:
-            logger.warning("Remote method call failed: %s", response['error'])
+            logger.warning("Remote method call failed after %s: %s", timer, response['error'])
             raise RemoteMethodFailed(response['error'])
 
     def enter_main_loop(self):

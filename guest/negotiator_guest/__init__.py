@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 24, 2014
+# Last Change: September 26, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -13,15 +13,24 @@ running inside KVM/QEMU guests.
 """
 
 # Standard library modules.
+import fcntl
+import itertools
 import logging
+import multiprocessing
 import os
+import signal
+import sys
+import time
 
 # External dependencies.
+from humanfriendly import Timer
+
+# Modules included in our project.
 from negotiator_common import NegotiatorInterface
 from negotiator_common.utils import compact
 
 # Semi-standard module versioning.
-__version__ = '0.5.2'
+__version__ = '0.6'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -43,6 +52,75 @@ class GuestAgent(NegotiatorInterface):
         # to the character device in read/write mode.
         super(GuestAgent, self).__init__(handle=open(character_device, 'r+'),
                                          label="character device %s" % character_device)
+
+    def raw_readline(self):
+        """
+        Read a newline terminated string from the remote side.
+
+        This method overrides the
+        :py:func:`~negotiator_common.NegotiatorInterface.raw_readline()` method
+        of the :py:func:`~negotiator_common.NegotiatorInterface` class to
+        implement blocking reads based on :py:data:`os.O_ASYNC` and
+        :py:data:`signal.SIGIO` (see also :py:class:`WaitForRead`).
+
+        :returns: The data read from the remote side (a string).
+        """
+        logger.debug("Preparing to read line from %s ..", self.conn_label)
+        data = self.conn_handle.readline()
+        if not data:
+            # If the read returns an empty string the channel is not connected.
+            # At this point we'll bother to prepare a convoluted way to block
+            # until the channel does become connected.
+            logger.debug("Emulating blocking read of %s ..", self.conn_label)
+            # Set the O_ASYNC flag on the file descriptor connected to the
+            # character device (this is required to use SIGIO signals).
+            flags = fcntl.fcntl(self.conn_handle, fcntl.F_GETFL)
+            fcntl.fcntl(self.conn_handle, fcntl.F_SETFL, flags | os.O_ASYNC)
+            # Spawn a subprocess to reliably handle SIGIO signals. Due to the
+            # nature of (SIGIO) signals more than one signal may be delivered
+            # and this is a big problem when you want to do more than just call
+            # sys.exit(). The alternative to this would be signal.alarm() but
+            # that function has an inherent race condition. To fix that race
+            # condition there is sigsuspend() but this function is not
+            # available in the Python standard library.
+            waiter = WaitForRead()
+            waiter.daemon = True
+            waiter.start()
+            # Connect the file descriptor to the subprocess.
+            fcntl.fcntl(self.conn_handle, fcntl.F_SETOWN, waiter.pid)
+            # The channel may have become connected after we last got an empty
+            # read but before we spawned our subprocess, so check one more
+            # time to make sure.
+            data = self.conn_handle.readline()
+            if data:
+                # If there is data available now we prepared for nothing, so
+                # all we need to do is clean up.
+                waiter.terminate()
+            else:
+                # If there is still no data available we'll wait for the
+                # subprocess to indicate that data should be available.
+                waiter.join()
+                data = self.conn_handle.readline()
+        logger.debug("Read %i bytes from %s: %r", len(data), self.conn_label, data)
+        return data
+
+
+class WaitForRead(multiprocessing.Process):
+
+    """Used by :py:func:`GuestAgent.raw_readline()` to implement blocking reads."""
+
+    def run(self):
+        """Endless loop that waits for one or more ``SIGIO`` signals to arrive."""
+        logger.debug("Installing SIGIO signal handler ..")
+        signal.signal(signal.SIGIO, self.signal_handler)
+        timer = Timer()
+        for seconds in itertools.count(start=1):
+            logger.debug("Waiting for SIGIO signal (%s) ..", timer)
+            time.sleep(seconds)
+
+    def signal_handler(self, signal_number, frame):
+        """Signal handler for ``SIGIO`` signals that immediately exits the process."""
+        sys.exit(0)
 
 
 def find_character_device(port_name):
