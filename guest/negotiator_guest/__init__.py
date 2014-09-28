@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 26, 2014
+# Last Change: September 28, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -30,7 +30,7 @@ from negotiator_common import NegotiatorInterface
 from negotiator_common.utils import compact
 
 # Semi-standard module versioning.
-__version__ = '0.6'
+__version__ = '0.6.1'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -114,7 +114,7 @@ class WaitForRead(multiprocessing.Process):
         logger.debug("Installing SIGIO signal handler ..")
         signal.signal(signal.SIGIO, self.signal_handler)
         timer = Timer()
-        for seconds in itertools.count(start=1):
+        for seconds in itertools.count():
             logger.debug("Waiting for SIGIO signal (%s) ..", timer)
             time.sleep(seconds)
 
