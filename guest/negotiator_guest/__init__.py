@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 28, 2014
+# Last Change: October 24, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -30,7 +30,7 @@ from negotiator_common import NegotiatorInterface
 from negotiator_common.utils import compact
 
 # Semi-standard module versioning.
-__version__ = '0.6.1'
+__version__ = '0.7'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
