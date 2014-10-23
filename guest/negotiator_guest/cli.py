@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 26, 2014
+# Last Change: October 24, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -27,6 +27,12 @@ Supported options:
     Start the guest daemon. When using this command line option the
     `negotiator-guest' program never returns (unless an unexpected error
     condition occurs).
+
+  -t, --timeout=SECONDS
+
+    Set the number of seconds before a remote call without a response times
+    out. A value of zero disables the timeout (in this case the command can
+    hang indefinitely). The default is 10 seconds.
 
   -c, --character-device=PATH
 
@@ -59,7 +65,8 @@ import coloredlogs
 from humanfriendly import Timer
 
 # Modules included in our project.
-from negotiator_common.config import GUEST_TO_HOST_CHANNEL_NAME, HOST_TO_GUEST_CHANNEL_NAME
+from negotiator_common.config import GUEST_TO_HOST_CHANNEL_NAME, HOST_TO_GUEST_CHANNEL_NAME, DEFAULT_TIMEOUT
+from negotiator_common.utils import TimeOut
 from negotiator_guest import GuestAgent, find_character_device
 
 # Initialize a logger for this module.
@@ -74,11 +81,12 @@ def main():
     list_commands = False
     execute_command = None
     start_daemon = False
+    timeout = DEFAULT_TIMEOUT
     character_device = None
     try:
-        options, arguments = getopt.getopt(sys.argv[1:], 'le:dc:vqh', [
-            'list-commands', 'execute=', 'daemon', 'character-device=',
-            'verbose', 'quiet', 'help'
+        options, arguments = getopt.getopt(sys.argv[1:], 'le:dt:c:vqh', [
+            'list-commands', 'execute=', 'daemon', 'timeout=',
+            'character-device=', 'verbose', 'quiet', 'help'
         ])
         for option, value in options:
             if option in ('-l', '--list-commands'):
@@ -87,6 +95,8 @@ def main():
                 execute_command = value
             elif option in ('-d', '--daemon'):
                 start_daemon = True
+            elif option in ('-t', '--timeout'):
+                timeout = int(value)
             elif option in ('-c', '--character-device'):
                 character_device = value
             elif option in ('-v', '--verbose'):
@@ -111,12 +121,14 @@ def main():
         if start_daemon:
             ga.enter_main_loop()
         elif list_commands:
-            print('\n'.join(ga.call_remote_method('list_commands')))
+            with TimeOut(timeout):
+                print('\n'.join(ga.call_remote_method('list_commands')))
         elif execute_command:
-            timer = Timer()
-            output = ga.call_remote_method('execute', *shlex.split(execute_command), capture=True)
-            logger.debug("Took %s to execute remote command.", timer)
-            print(output.rstrip())
+            with TimeOut(timeout):
+                timer = Timer()
+                output = ga.call_remote_method('execute', *shlex.split(execute_command), capture=True)
+                logger.debug("Took %s to execute remote command.", timer)
+                print(output.rstrip())
     except Exception:
         logger.exception("Caught a fatal exception! Terminating ..")
         sys.exit(1)

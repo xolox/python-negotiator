@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 24, 2014
+# Last Change: October 24, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -18,6 +18,12 @@
    The pathname of the directory containing user defined commands that 'the
    other side' can invoke through Negotiator. Defaults to
    ``/usr/lib/negotiator/commands``.
+
+.. data:: DEFAULT_TIMEOUT
+
+   The number of seconds to wait for a reply from the other side. If more time
+   elapses an exception is raised causing the process to exit with a nonzero
+   status code. Defaults to 10 seconds.
 
 .. data:: GUEST_TO_HOST_CHANNEL_NAME
 
@@ -37,3 +43,4 @@ USER_COMMANDS_DIRECTORY = '/usr/lib/negotiator/commands'
 BUILTIN_COMMANDS_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts')
 GUEST_TO_HOST_CHANNEL_NAME = 'negotiator-guest-to-host.0'
 HOST_TO_GUEST_CHANNEL_NAME = 'negotiator-host-to-guest.0'
+DEFAULT_TIMEOUT = 10

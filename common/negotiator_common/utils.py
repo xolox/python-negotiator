@@ -1,13 +1,15 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 24, 2014
+# Last Change: October 24, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
 ``negotiator_common.utils`` - Miscellaneous functions
 =====================================================
 """
+
+import signal
 
 
 def compact(text, **kw):
@@ -39,3 +41,36 @@ def format_call(function, *args, **kw):
     for keyword, value in kw.items():
         formatted_arguments.append("%s=%r" % (keyword, value))
     return "%s(%s)" % (function, ', '.join(formatted_arguments))
+
+
+class TimeOut(object):
+
+    """Context manager that enforces timeouts using UNIX alarm signals."""
+
+    def __init__(self, num_seconds):
+        """
+        Initialize the context manager.
+
+        :param num_seconds: The number of seconds after which to interrupt the
+                            running operation (an integer).
+        """
+        self.num_seconds = num_seconds
+
+    def __enter__(self):
+        """Schedule the timeout."""
+        self.previous_handler = signal.signal(signal.SIGALRM, self.signal_handler)
+        signal.alarm(self.num_seconds)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Clear the timeout and restore the previous signal handler."""
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, self.previous_handler)
+
+    def signal_handler(self, signum, frame):
+        """Raise :py:class:`TimeOutError` when the timeout elapses."""
+        raise TimeOutError()
+
+
+class TimeOutError(Exception):
+
+    """Exception raised by the :py:class:`TimeOut` context manager."""

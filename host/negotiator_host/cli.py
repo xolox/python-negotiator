@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 26, 2014
+# Last Change: October 24, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -26,6 +26,12 @@ Supported options:
     the command inside the guest is intercepted and copied to the standard
     output stream on the host. If the command exits with a nonzero status code
     the negotiator-host program will also exit with a nonzero status code.
+
+  -t, --timeout=SECONDS
+
+    Set the number of seconds before a remote call without a response times
+    out. A value of zero disables the timeout (in this case the command can
+    hang indefinitely). The default is 10 seconds.
 
   -d, --daemon
 
@@ -56,7 +62,8 @@ import coloredlogs
 from humanfriendly import Timer
 
 # Modules included in our project.
-from negotiator_common.config import CHANNELS_DIRECTORY, HOST_TO_GUEST_CHANNEL_NAME
+from negotiator_common.config import CHANNELS_DIRECTORY, HOST_TO_GUEST_CHANNEL_NAME, DEFAULT_TIMEOUT
+from negotiator_common.utils import TimeOut
 from negotiator_host import HostDaemon, GuestChannel, find_available_channels
 
 # Initialize a logger for this module.
@@ -69,22 +76,25 @@ def main():
     coloredlogs.install(level=logging.INFO)
     # Parse the command line arguments.
     actions = []
+    context = Context()
     try:
-        options, arguments = getopt.getopt(sys.argv[1:], 'gce:dvqh', [
-            'list-guests', 'list-commands', 'execute=', 'daemon', 'verbose',
-            'quiet', 'help'
+        options, arguments = getopt.getopt(sys.argv[1:], 'gce:t:dvqh', [
+            'list-guests', 'list-commands', 'execute=', 'timeout=', 'daemon',
+            'verbose', 'quiet', 'help'
         ])
         for option, value in options:
             if option in ('-g', '--list-guests'):
-                actions.append(print_guest_names)
+                actions.append(context.print_guest_names)
             elif option in ('-c', '--list-commands'):
                 assert len(arguments) == 1, \
                     "Please provide the name of a guest as the 1st and only positional argument!"
-                actions.append(functools.partial(print_commands, arguments[0]))
+                actions.append(functools.partial(context.print_commands, arguments[0]))
             elif option in ('-e', '--execute'):
                 assert len(arguments) == 1, \
                     "Please provide the name of a guest as the 1st and only positional argument!"
-                actions.append(functools.partial(execute_command, arguments[0], value))
+                actions.append(functools.partial(context.execute_command, arguments[0], value))
+            elif option in ('-t', '--timeout'):
+                context.timeout = int(value)
             elif option in ('-d', '--daemon'):
                 actions.append(HostDaemon)
             elif option in ('-v', '--verbose'):
@@ -114,36 +124,30 @@ def usage():
     print(__doc__.strip())
 
 
-def print_guest_names():
-    """Print the names of the guests that Negotiator can connect with."""
-    channels = find_available_channels(CHANNELS_DIRECTORY, HOST_TO_GUEST_CHANNEL_NAME)
-    print('\n'.join(sorted(channels.keys())))
+class Context(object):
 
+    """Enables :py:func:`main()` to inject a custom timeout into partially applied actions."""
 
-def print_commands(guest_name):
-    """Print the commands supported by the guest."""
-    channel = GuestChannel(guest_name=guest_name)
-    print('\n'.join(sorted(channel.call_remote_method('list_commands'))))
+    def __init__(self):
+        """Initialize a context for executing commands on the host."""
+        self.timeout = DEFAULT_TIMEOUT
 
+    def print_guest_names(self):
+        """Print the names of the guests that Negotiator can connect with."""
+        channels = find_available_channels(CHANNELS_DIRECTORY, HOST_TO_GUEST_CHANNEL_NAME)
+        print('\n'.join(sorted(channels.keys())))
 
-def print_result(guest_name, method_name):
-    """Print the result of a remote method invoked on the named guest's channel."""
-    channel = GuestChannel(guest_name=guest_name)
-    method = getattr(channel, method_name)
-    result = method()
-    if isinstance(result, list):
-        result = '\n'.join(result)
-    print(result.rstrip())
+    def print_commands(self, guest_name):
+        """Print the commands supported by the guest."""
+        with TimeOut(self.timeout):
+            channel = GuestChannel(guest_name=guest_name)
+            print('\n'.join(sorted(channel.call_remote_method('list_commands'))))
 
-
-def execute_command(guest_name, command_line):
-    """Execute a command inside the named guest."""
-    channel = GuestChannel(guest_name=guest_name)
-    try:
-        timer = Timer()
-        output = channel.call_remote_method('execute', *shlex.split(command_line), capture=True)
-        logger.debug("Took %s to execute remote command.", timer)
-        print(output.rstrip())
-    except Exception:
-        logger.exception("Caught unexpected exception during remote command execution!")
-        sys.exit(1)
+    def execute_command(self, guest_name, command_line):
+        """Execute a command inside the named guest."""
+        with TimeOut(self.timeout):
+            timer = Timer()
+            channel = GuestChannel(guest_name=guest_name)
+            output = channel.call_remote_method('execute', *shlex.split(command_line), capture=True)
+            logger.debug("Took %s to execute remote command.", timer)
+            print(output.rstrip())
