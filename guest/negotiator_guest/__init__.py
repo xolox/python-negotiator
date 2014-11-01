@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: October 24, 2014
+# Last Change: November 1, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -27,10 +27,10 @@ from humanfriendly import Timer
 
 # Modules included in our project.
 from negotiator_common import NegotiatorInterface
-from negotiator_common.utils import compact
+from negotiator_common.utils import compact, GracefulShutdown
 
 # Semi-standard module versioning.
-__version__ = '0.7'
+__version__ = '0.8'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -65,13 +65,17 @@ class GuestAgent(NegotiatorInterface):
 
         :returns: The data read from the remote side (a string).
         """
-        logger.debug("Preparing to read line from %s ..", self.conn_label)
-        data = self.conn_handle.readline()
-        if not data:
-            # If the read returns an empty string the channel is not connected.
-            # At this point we'll bother to prepare a convoluted way to block
-            # until the channel does become connected.
-            logger.debug("Emulating blocking read of %s ..", self.conn_label)
+        while True:
+            # Check if the channel contains data.
+            logger.debug("Preparing to read line from %s ..", self.conn_label)
+            data = self.conn_handle.readline()
+            if data:
+                break
+            # If the readline() above returns an empty string the channel
+            # is (probably) not connected. At this point we'll bother to
+            # prepare a convoluted way to block until the channel does
+            # become connected.
+            logger.debug("Got an empty read, emulating blocking read of %s ..", self.conn_label)
             # Set the O_ASYNC flag on the file descriptor connected to the
             # character device (this is required to use SIGIO signals).
             flags = fcntl.fcntl(self.conn_handle, fcntl.F_GETFL)
@@ -79,28 +83,43 @@ class GuestAgent(NegotiatorInterface):
             # Spawn a subprocess to reliably handle SIGIO signals. Due to the
             # nature of (SIGIO) signals more than one signal may be delivered
             # and this is a big problem when you want to do more than just call
-            # sys.exit(). The alternative to this would be signal.alarm() but
+            # sys.exit(). The alternative to this would be signal.pause() but
             # that function has an inherent race condition. To fix that race
             # condition there is sigsuspend() but this function is not
             # available in the Python standard library.
             waiter = WaitForRead()
-            waiter.daemon = True
-            waiter.start()
-            # Connect the file descriptor to the subprocess.
-            fcntl.fcntl(self.conn_handle, fcntl.F_SETOWN, waiter.pid)
-            # The channel may have become connected after we last got an empty
-            # read but before we spawned our subprocess, so check one more
-            # time to make sure.
-            data = self.conn_handle.readline()
-            if data:
-                # If there is data available now we prepared for nothing, so
-                # all we need to do is clean up.
-                waiter.terminate()
-            else:
-                # If there is still no data available we'll wait for the
-                # subprocess to indicate that data should be available.
-                waiter.join()
-                data = self.conn_handle.readline()
+            # If we get killed we need to make sure we take the subprocess
+            # down with us, otherwise the subprocess may still be reading
+            # from the character device when we are restarted and that's a
+            # problem because the character device doesn't allow multiple
+            # readers; all but the first reader will get the error
+            # `IOError: [Errno 16] Device or resource busy'.
+            with GracefulShutdown():
+                try:
+                    # Start the subprocess.
+                    waiter.start()
+                    # Connect the file descriptor to the subprocess.
+                    fcntl.fcntl(self.conn_handle, fcntl.F_SETOWN, waiter.pid)
+                    # The channel may have become connected after we last got an empty
+                    # read but before we spawned our subprocess, so check one more
+                    # time to make sure.
+                    data = self.conn_handle.readline()
+                    if data:
+                        break
+                    # If there is still no data available we'll wait for the
+                    # subprocess to indicate that data has become available.
+                    waiter.join()
+                    # Let's see if the subprocess is right :-)
+                    data = self.conn_handle.readline()
+                    if data:
+                        break
+                finally:
+                    logger.debug("Terminating subprocess with process id %i ..", waiter.pid)
+                    waiter.terminate()
+            # If the convoluted way to simulate blocking reads above ever
+            # fails we don't want this method to turn into a `busy loop'.
+            logger.debug("Blocking read emulation seems to have failed, falling back to 1 second polling interval ..")
+            time.sleep(1)
         logger.debug("Read %i bytes from %s: %r", len(data), self.conn_label, data)
         return data
 

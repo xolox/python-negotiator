@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: October 24, 2014
+# Last Change: November 1, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -24,9 +24,10 @@ import time
 # Modules included in our project.
 from negotiator_common import NegotiatorInterface
 from negotiator_common.config import CHANNELS_DIRECTORY, GUEST_TO_HOST_CHANNEL_NAME, HOST_TO_GUEST_CHANNEL_NAME
+from negotiator_common.utils import GracefulShutdown
 
 # Semi-standard module versioning.
-__version__ = '0.7'
+__version__ = '0.8'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -49,9 +50,15 @@ class HostDaemon(object):
 
     def enter_main_loop(self):
         """Create and maintain active channels for all running guests."""
-        while True:
-            self.update_active_channels()
-            time.sleep(10)
+        with GracefulShutdown():
+            try:
+                while True:
+                    self.update_active_channels()
+                    time.sleep(10)
+            finally:
+                for channel in self.active_channels.values():
+                    channel.terminate()
+
 
     def update_active_channels(self):
         """Automatically spawn subprocesses to maintain connections to all guests."""

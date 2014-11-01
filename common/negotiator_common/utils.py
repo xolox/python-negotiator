@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: October 24, 2014
+# Last Change: November 1, 2014
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -43,6 +43,28 @@ def format_call(function, *args, **kw):
     return "%s(%s)" % (function, ', '.join(formatted_arguments))
 
 
+class GracefulShutdown(object):
+
+    """
+    Context manager to enable graceful handling of ``SIGTERM``.
+
+    This context manager translates termination signals (``SIGTERM``) into
+    :py:class:`TerminationError` exceptions.
+    """
+
+    def __enter__(self):
+        """Start intercepting termination signals."""
+        self.previous_handler = signal.signal(signal.SIGTERM, self.signal_handler)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Stop intercepting termination signals."""
+        signal.signal(signal.SIGTERM, self.previous_handler)
+
+    def signal_handler(self, signum, frame):
+        """Raise :py:class:`TerminationError` when the timeout elapses."""
+        raise TerminationError()
+
+
 class TimeOut(object):
 
     """Context manager that enforces timeouts using UNIX alarm signals."""
@@ -69,6 +91,11 @@ class TimeOut(object):
     def signal_handler(self, signum, frame):
         """Raise :py:class:`TimeOutError` when the timeout elapses."""
         raise TimeOutError()
+
+
+class TerminationError(SystemExit):
+
+    """Exception that is raised when ``SIGTERM`` is received."""
 
 
 class TimeOutError(Exception):
