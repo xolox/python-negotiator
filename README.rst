@@ -2,10 +2,10 @@ Scriptable KVM/QEMU guest agent implemented in Python
 =====================================================
 
 The Python packages negotiator-host_, negotiator-guest_ and negotiator-common_
-together implement a scriptable KVM/QEMU guest agent infrastructure in Python.
-This infrastructure supports realtime bidirectional communication between hosts
-and guests which allows the hosts and guests to invoke user defined commands on
-'the other side'.
+together implement a scriptable KVM_/QEMU_ guest agent infrastructure in
+Python. This infrastructure supports realtime bidirectional communication
+between Linux_ hosts and guests which allows the hosts and guests to invoke
+user defined commands on 'the other side'.
 
 Because the user defines the commands that hosts and guests can execute, the
 user controls the amount of influence that hosts and guests have over each
@@ -19,10 +19,12 @@ Status
 Some points to consider:
 
 - The Negotiator project does what I expect from it: realtime bidirectional
-  communication between KVM/QEMU hosts and guests.
+  communication between Linux based KVM/QEMU hosts and guests.
 
-- The project doesn't have an automated test suite yet, although its
-  functionality has been extensively tested during development.
+- The project doesn't have an automated test suite, although its functionality
+  has been extensively tested during development and is being used in a
+  production environment on more than 100 virtual machines (for non-critical
+  tasks).
 
 - The project has not been peer reviewed with regards to security. My primary
   use case is KVM/QEMU hosts and guests that trust each other to some extent
@@ -31,10 +33,13 @@ Some points to consider:
 Installation
 ------------
 
-The ``negotiator`` packages and their dependencies are compatible with Python
-2.6 and newer and are all pure Python. This means you don't need a compiler
-toolchain to install the ``negotiator`` packages. This is a design decision and
+The `negotiator` packages and their dependencies are compatible with Python 2.6
+and newer and are all pure Python. This means you don't need a compiler
+toolchain to install the `negotiator` packages. This is a design decision and
 so won't be changed.
+
+.. contents::
+   :local:
 
 On KVM/QEMU hosts
 ~~~~~~~~~~~~~~~~~
@@ -57,7 +62,7 @@ If you prefer you can install the Python package in a virtual environment:
 After installation the ``negotiator-host`` program is available. The usage
 message will help you get started, try the ``--help`` option. Now you need to
 find a way to run the ``negotiator-host`` command as a daemon. I have good
-experiences with ``supervisord``, here's how to set that up:
+experiences with supervisord_, here's how to set that up:
 
 .. code-block:: bash
 
@@ -90,7 +95,7 @@ If you prefer you can install the Python package in a virtual environment:
    $ pip install negotiator-guest
 
 After installation you need to find a way to run the ``negotiator-guest``
-command as a daemon. I have good experiences with ``supervisord``, here's how
+command as a daemon. I have good experiences with supervisord_, here's how
 to set that up:
 
 .. code-block:: bash
@@ -162,6 +167,9 @@ Debugging
 This section contains hints about what to do when things don't work as
 expected.
 
+.. contents::
+   :local:
+
 Broken channels on KVM/QEMU hosts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -183,8 +191,8 @@ default) you may need to apply the following patch:
 .. code-block:: bash
 
    $ diff -u /etc/apparmor.d/abstractions/libvirt-qemu.orig /etc/apparmor.d/abstractions/libvirt-qemu
-   --- /etc/apparmor.d/abstractions/libvirt-qemu.orig      2014-09-19 12:46:54.316593334 +0200
-   +++ /etc/apparmor.d/abstractions/libvirt-qemu   2014-09-24 14:43:43.642064576 +0200
+   --- /etc/apparmor.d/abstractions/libvirt-qemu.orig      2015-09-19 12:46:54.316593334 +0200
+   +++ /etc/apparmor.d/abstractions/libvirt-qemu   2015-09-24 14:43:43.642064576 +0200
    @@ -49,6 +49,9 @@
       /run/shm/ r,
       owner /run/shm/spice.* rw,
@@ -259,7 +267,7 @@ official QEMU guest agent does:
 Contact
 -------
 
-The latest version of ``negotiator`` is available on PyPI_ and GitHub_. You can
+The latest version of `negotiator` is available on PyPI_ and GitHub_. You can
 find the documentation on `Read The Docs`_. For bug reports please create an
 issue on GitHub_. If you have questions, suggestions, etc. feel free to send me
 an e-mail at `peter@peterodding.com`_.
@@ -269,11 +277,13 @@ License
 
 This software is licensed under the `MIT license`_.
 
-© 2014 Peter Odding.
+© 2015 Peter Odding.
 
 .. External references:
 .. _environment variables: http://negotiator.readthedocs.org/en/latest/#negotiator_host.GuestChannel.prepare_environment
 .. _GitHub: https://github.com/xolox/python-negotiator
+.. _KVM: https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine
+.. _Linux: https://en.wikipedia.org/wiki/Linux
 .. _MIT license: http://en.wikipedia.org/wiki/MIT_License
 .. _negotiator-common: https://pypi.python.org/pypi/negotiator-common
 .. _negotiator-guest: https://pypi.python.org/pypi/negotiator-guest
@@ -281,5 +291,7 @@ This software is licensed under the `MIT license`_.
 .. _official guest agent: http://wiki.libvirt.org/page/Qemu_guest_agent
 .. _peter@peterodding.com: peter@peterodding.com
 .. _PyPI: https://pypi.python.org/pypi/negotiator-host
+.. _QEMU: https://en.wikipedia.org/wiki/QEMU
 .. _Read The Docs: http://negotiator.readthedocs.org/en/latest/
+.. _supervisord: http://supervisord.org/
 .. _the same mechanism: http://www.linux-kvm.org/page/VMchannel_Requirements
