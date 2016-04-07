@@ -31,7 +31,7 @@ from negotiator_common.utils import GracefulShutdown
 from executor import execute
 
 # Semi-standard module versioning.
-__version__ = '0.8.3'
+__version__ = '0.8.4'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -149,7 +149,19 @@ class GuestChannel(NegotiatorInterface):
         self.guest_name = guest_name
         # Figure out the absolute pathname of the UNIX socket?
         if not unix_socket:
-            unix_socket = os.path.join(CHANNELS_DIRECTORY, '%s.%s' % (self.guest_name, HOST_TO_GUEST_CHANNEL_NAME))
+            # The new naming convention is used on Ubuntu 16.04 while the old
+            # naming convention is used on 12.04 and 14.04.
+            new_style = os.path.join(CHANNELS_DIRECTORY, 'domain-%s' % self.guest_name, HOST_TO_GUEST_CHANNEL_NAME)
+            old_style = os.path.join(CHANNELS_DIRECTORY, '%s.%s' % (self.guest_name, HOST_TO_GUEST_CHANNEL_NAME))
+            if os.path.exists(new_style):
+                logger.debug("Found channel of guest %r (using new naming convention).", self.guest_name)
+                unix_socket = new_style
+            elif os.path.exists(old_style):
+                logger.debug("Found channel of guest %r (using old naming convention).", self.guest_name)
+                unix_socket = old_style
+            else:
+                msg = "No UNIX socket pathname provided and auto-detection failed!"
+                raise GuestChannelInitializationError(msg)
         # Connect to the UNIX socket.
         logger.debug("Opening UNIX socket: %s", unix_socket)
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
