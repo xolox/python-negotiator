@@ -3,7 +3,7 @@
 # Setup script for the `negotiator-host' package.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: November 1, 2014
+# Last Change: April 8, 2016
 # URL: https://negotiator.readthedocs.org
 
 """Setup script for the ``negotiator-host`` package."""
@@ -49,7 +49,7 @@ setup(name='negotiator-host',
           'negotiator-host = negotiator_host.cli:main'
       ]),
       install_requires=[
-          'coloredlogs >= 0.6',
+          'coloredlogs >= 5.0',
           'negotiator-common >= 0.8',
       ],
       classifiers=[

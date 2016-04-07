@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: December 30, 2014
+# Last Change: April 8, 2016
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -17,6 +17,7 @@ used to query and command running guests.
 import logging
 import multiprocessing
 import os
+import re
 import socket
 import stat
 import time
@@ -30,7 +31,7 @@ from negotiator_common.utils import GracefulShutdown
 from executor import execute
 
 # Semi-standard module versioning.
-__version__ = '0.8.2'
+__version__ = '0.8.3'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -196,18 +197,33 @@ def find_available_channels(directory, name):
     channels = {}
     suffix = '.%s' % name
     running_guests = set(find_running_guests())
-    for entry in os.listdir(directory):
-        # Validate the filename suffix.
-        if entry.endswith(suffix):
-            pathname = os.path.join(directory, entry)
-            # Make sure we're dealing with a UNIX socket.
-            if stat.S_ISSOCK(os.stat(pathname).st_mode):
-                guest_name = entry[:-len(suffix)]
-                # Make sure the guest is available and running.
-                if guest_name in running_guests:
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            # Validate the filename.
+            if filename.endswith(suffix):
+                # In Ubuntu 12.04 and 14.04 I have observed and now assume
+                # the following directory/file naming scheme for channels:
+                #
+                # /var/lib/libvirt/qemu/channel/target/GUEST_NAME.negotiator-guest-to-host.0
+                guest_name = filename[:-len(suffix)]
+                logger.debug("Found channel of guest %r (using old naming convention).", guest_name)
+            elif filename == name:
+                # In Ubuntu 16.04 I have observed and now assume the
+                # following directory/file naming scheme for channels:
+                #
+                # /var/lib/libvirt/qemu/channel/target/domain-GUEST_NAME/negotiator-guest-to-host.0
+                guest_name = re.sub('^domain-', '', os.path.basename(root))
+                logger.debug("Found channel of guest %r (using new naming convention).", guest_name)
+            else:
+                continue
+            # Make sure the guest is available and running.
+            pathname = os.path.join(root, filename)
+            if guest_name in running_guests:
+                # Make sure we're dealing with a UNIX socket.
+                if stat.S_ISSOCK(os.stat(pathname).st_mode):
                     channels[guest_name] = pathname
-                else:
-                    logger.debug("Ignoring UNIX socket %s (guest %r isn't running) ..", pathname, guest_name)
+            else:
+                logger.debug("Ignoring UNIX socket %s (guest %r isn't running) ..", pathname, guest_name)
     return channels
 
 

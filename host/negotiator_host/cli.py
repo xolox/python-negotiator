@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: October 24, 2014
+# Last Change: April 8, 2016
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -72,8 +72,8 @@ logger = logging.getLogger(__name__)
 
 def main():
     """Command line interface for the ``negotiator-host`` program."""
-    # Initialize logging to the terminal.
-    coloredlogs.install(level=logging.INFO)
+    # Initialize logging to the terminal and system log.
+    coloredlogs.install(syslog=True)
     # Parse the command line arguments.
     actions = []
     context = Context()
@@ -135,7 +135,8 @@ class Context(object):
     def print_guest_names(self):
         """Print the names of the guests that Negotiator can connect with."""
         channels = find_available_channels(CHANNELS_DIRECTORY, HOST_TO_GUEST_CHANNEL_NAME)
-        print('\n'.join(sorted(channels.keys())))
+        if channels:
+            print('\n'.join(sorted(channels.keys())))
 
     def print_commands(self, guest_name):
         """Print the commands supported by the guest."""
