@@ -3,7 +3,7 @@
 # Setup script for the `negotiator-guest' package.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: April 8, 2016
+# Last Change: April 26, 2018
 # URL: https://negotiator.readthedocs.org
 
 """Setup script for the ``negotiator-guest`` package."""
@@ -44,6 +44,7 @@ setup(name='negotiator-guest',
       url='https://negotiator.readthedocs.org',
       author="Peter Odding",
       author_email='peter@peterodding.com',
+      license='MIT',
       packages=find_packages(),
       entry_points=dict(console_scripts=[
           'negotiator-guest = negotiator_guest.cli:main'

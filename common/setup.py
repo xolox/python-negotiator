@@ -3,7 +3,7 @@
 # Setup script for the `negotiator-common' package.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 26, 2014
+# Last Change: April 26, 2018
 # URL: https://negotiator.readthedocs.org
 
 """Setup script for the ``negotiator-common`` package."""
@@ -44,6 +44,7 @@ setup(name='negotiator-common',
       url='https://negotiator.readthedocs.org',
       author="Peter Odding",
       author_email='peter@peterodding.com',
+      license='MIT',
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
