@@ -1,12 +1,11 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: April 8, 2016
+# Last Change: April 26, 2018
 # URL: https://negotiator.readthedocs.org
 
 """
-``negotiator_common`` - Common shared functionality
-===================================================
+Common shared functionality between the `negotiator` host and guest.
 
 This Python module contains the functionality that is shared between the
 negotiator-host_ and negotiator-guest_ packages. By moving all of the shared

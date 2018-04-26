@@ -4,10 +4,7 @@
 # Last Change: April 26, 2018
 # URL: https://negotiator.readthedocs.org
 
-"""
-``negotiator_common.config`` - Configuration defaults
-=====================================================
-"""
+"""Configuration defaults for the `negotiator` project."""
 
 import os
 

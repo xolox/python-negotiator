@@ -1,12 +1,11 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: April 8, 2016
+# Last Change: April 26, 2018
 # URL: https://negotiator.readthedocs.org
 
 """
-``negotiator_host`` - Channel for communication with guests
-===========================================================
+Channel for communication with guests.
 
 This module implements the :py:class:`GuestChannel` class which provides the
 host side of the channel between QEMU hosts and guests. Channel objects can be

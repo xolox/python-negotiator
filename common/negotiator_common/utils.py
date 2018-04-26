@@ -1,13 +1,10 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: November 1, 2014
+# Last Change: April 26, 2018
 # URL: https://negotiator.readthedocs.org
 
-"""
-``negotiator_common.utils`` - Miscellaneous functions
-=====================================================
-"""
+"""Miscellaneous functionality."""
 
 # Standard library modules.
 import signal

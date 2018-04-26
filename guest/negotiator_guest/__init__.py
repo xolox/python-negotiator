@@ -1,12 +1,11 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: April 8, 2016
+# Last Change: April 26, 2018
 # URL: https://negotiator.readthedocs.org
 
 """
-``negotiator_guest`` - The guest agent daemon
-=============================================
+The guest agent daemon and client.
 
 This module implements the guest agent, the Python daemon process that's always
 running inside KVM/QEMU guests.
