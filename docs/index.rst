@@ -1,18 +1,33 @@
-.. include:: ../README.rst
+Scriptable KVM/QEMU guest agent implemented in Python
+=====================================================
 
-Function reference
-==================
+Welcome to the documentation of `negotiator` version |release|! The
+following sections are available:
 
-The following documentation is based on the source code of version |release| of
-the negotiator-host_ package.
+.. contents::
+   :local:
 
-.. automodule:: negotiator_host
-   :members:
+User documentation
+------------------
 
-.. automodule:: negotiator_guest
-   :members:
+The readme is the best place to start reading, it's targeted at all users and
+documents the command line interface:
 
-.. automodule:: negotiator_common
-   :members:
+.. toctree::
+   readme.rst
 
-.. _negotiator-host: https://pypi.python.org/pypi/negotiator-host
+API documentation
+-----------------
+
+The following API documentation is automatically generated from the source code:
+
+.. toctree::
+   api.rst
+
+Change log
+----------
+
+The change log lists notable changes to the project:
+
+.. toctree::
+   changelog.rst
