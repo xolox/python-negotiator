@@ -1,60 +1,64 @@
 # Makefile for negotiator.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: September 24, 2014
+# Last Change: April 26, 2018
 # URL: https://github.com/xolox/negotiator
 
-SHELL = bash
+PROJECT_NAME = negotiator
 WORKON_HOME ?= $(HOME)/.virtualenvs
-VIRTUAL_ENV ?= $(WORKON_HOME)/negotiator
-ACTIVATE = . $(VIRTUAL_ENV)/bin/activate
+VIRTUAL_ENV ?= $(WORKON_HOME)/$(PROJECT_NAME)
+PATH := $(VIRTUAL_ENV)/bin:$(PATH)
+MAKE := $(MAKE) --no-print-directory
+SHELL = bash
 
 default:
-	@echo 'Makefile for negotiator'
+	@echo "Makefile for $(PROJECT_NAME)"
 	@echo
 	@echo 'Usage:'
 	@echo
 	@echo '    make install    install the package in a virtual environment'
 	@echo '    make reset      recreate the virtual environment'
+	@echo '    make check      check coding style (PEP-8, PEP-257)'
+	@echo '    make readme     update usage in readme'
+	@echo '    make docs       update documentation using Sphinx'
 	@echo '    make publish    publish changes to GitHub/PyPI'
 	@echo '    make clean      cleanup all temporary files'
 	@echo
 
 install:
-	test -d "$(WORKON_HOME)" || mkdir -p "$(WORKON_HOME)"
-	test -d "$(VIRTUAL_ENV)" || virtualenv "$(VIRTUAL_ENV)"
-	test -x "$(VIRTUAL_ENV)/bin/pip" || ($(ACTIVATE) && easy_install pip)
-	test -x "$(VIRTUAL_ENV)/bin/pip-accel" || ($(ACTIVATE) && pip install pip-accel)
-	$(ACTIVATE) && pip uninstall -y negotiator-host || true
-	$(ACTIVATE) && pip uninstall -y negotiator-guest || true
-	$(ACTIVATE) && pip uninstall -y negotiator-common || true
-	$(ACTIVATE) && pip-accel install --editable ./common
-	$(ACTIVATE) && pip-accel install --editable ./host
-	$(ACTIVATE) && pip-accel install --editable ./guest
+	@test -d "$(VIRTUAL_ENV)" || mkdir -p "$(VIRTUAL_ENV)"
+	@test -x "$(VIRTUAL_ENV)/bin/python" || virtualenv --quiet "$(VIRTUAL_ENV)"
+	@test -x "$(VIRTUAL_ENV)/bin/pip" || easy_install pip
+	@test -x "$(VIRTUAL_ENV)/bin/pip-accel" || pip install --quiet pip-accel
+	@pip uninstall --yes negotiator-host &>/dev/null || true
+	@pip uninstall --yes negotiator-guest &>/dev/null || true
+	@pip uninstall --yes negotiator-common &>/dev/null || true
+	@pip install --quiet --editable ./{common,host,guest}
 
 reset:
+	$(MAKE) clean
 	rm -Rf "$(VIRTUAL_ENV)"
-	make --no-print-directory clean install
+	$(MAKE) install
 
-check:
-	@test -x "$(VIRTUAL_ENV)/bin/pyflakes" || ($(ACTIVATE) && pip install pyflakes)
-	@test -x "$(VIRTUAL_ENV)/bin/pep8" || ($(ACTIVATE) && pip install pep8)
-	@test -x "$(VIRTUAL_ENV)/bin/pep257" || ($(ACTIVATE) && pip install pep257)
-	$(ACTIVATE) && pyflakes .
-	$(ACTIVATE) && pep8 --max-line-length=120 .
-	$(ACTIVATE) && pep257 --ignore=D205,D400 .
+check: install
+	@pip install -r requirements-checks.txt && flake8
 
-docs: install
-	test -x "$(VIRTUAL_ENV)/bin/sphinx-build" || ($(ACTIVATE) && pip-accel install sphinx)
-	$(ACTIVATE) && cd docs && sphinx-build -b html -d build/doctrees . build/html
+readme: install
+	@pip install --quiet cogapp && cog.py -r README.rst
 
-publish:
+docs: readme
+	@pip install --quiet sphinx
+	@cd docs && sphinx-build -nb html -d build/doctrees . build/html
+
+publish: install
 	git push origin && git push --tags origin
-	make clean
+	$(MAKE) clean
+	pip install --quiet twine wheel
 	set -e; for package in common host guest; do \
 		cp $(CURDIR)/README.rst $(CURDIR)/$$package; \
 		cd $(CURDIR)/$$package; \
-		python setup.py sdist upload; \
+		python setup.py sdist bdist_wheel; \
+		twine upload dist/*; \
 		rm README.rst; \
 	done
 
@@ -63,4 +67,4 @@ clean:
 	rm -Rf docs/{_{build,static,templates},build}
 	find -type f -name '*.pyc' -delete
 
-.PHONY: default install reset check docs publish clean
+.PHONY: default install reset check readme docs publish clean
