@@ -11,7 +11,11 @@ for package_directory in ['host', 'guest', 'common']:
 # -- General configuration -----------------------------------------------------
 
 # Sphinx extension module names.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'humanfriendly.sphinx',
+]
 
 # Paths that contain templates, relative to this directory.
 templates_path = ['templates']
@@ -66,15 +70,3 @@ intersphinx_mapping = dict(
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = 'nature'
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = 'negotiatordoc'
-
-# -- Customizing autodoc output ------------------------------------------------
-
-
-def setup(app):
-    """Instruct autodoc not to omit ``__init__()``."""
-    # Based on http://stackoverflow.com/a/5599712/788200.
-    app.connect('autodoc-skip-member', (lambda app, what, name, obj, skip, options:
-                                        False if name == '__init__' else skip))

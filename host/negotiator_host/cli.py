@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: April 8, 2016
+# Last Change: April 26, 2018
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -60,6 +60,7 @@ import sys
 # External dependencies.
 import coloredlogs
 from humanfriendly import Timer
+from humanfriendly.terminal import usage, warning
 
 # Modules included in our project.
 from negotiator_common.config import CHANNELS_DIRECTORY, HOST_TO_GUEST_CHANNEL_NAME, DEFAULT_TIMEOUT
@@ -102,13 +103,13 @@ def main():
             elif option in ('-q', '--quiet'):
                 coloredlogs.decrease_verbosity()
             elif option in ('-h', '--help'):
-                usage()
+                usage(__doc__)
                 sys.exit(0)
         if not actions:
-            usage()
+            usage(__doc__)
             sys.exit(0)
     except Exception:
-        logger.exception("Failed to parse command line arguments!")
+        warning("Failed to parse command line arguments!")
         sys.exit(1)
     # Execute the requested action(s).
     try:
@@ -117,11 +118,6 @@ def main():
     except Exception:
         logger.exception("Caught a fatal exception! Terminating ..")
         sys.exit(1)
-
-
-def usage():
-    """Print a user friendly usage message to the terminal."""
-    print(__doc__.strip())
 
 
 class Context(object):

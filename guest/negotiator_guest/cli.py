@@ -1,13 +1,14 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: April 8, 2016
+# Last Change: April 26, 2018
 # URL: https://negotiator.readthedocs.org
 
 """
 Usage: negotiator-guest [OPTIONS]
 
-Start the negotiator-guest daemon.
+Communicate from a KVM/QEMU guest system to its host or start the
+guest daemon to allow the host to execute commands on its guests.
 
 Supported options:
 
@@ -63,6 +64,7 @@ import sys
 # External dependencies.
 import coloredlogs
 from humanfriendly import Timer
+from humanfriendly.terminal import usage, warning
 
 # Modules included in our project.
 from negotiator_common.config import GUEST_TO_HOST_CHANNEL_NAME, HOST_TO_GUEST_CHANNEL_NAME, DEFAULT_TIMEOUT
@@ -104,13 +106,13 @@ def main():
             elif option in ('-q', '--quiet'):
                 coloredlogs.decrease_verbosity()
             elif option in ('-h', '--help'):
-                usage()
+                usage(__doc__)
                 sys.exit(0)
         if not (list_commands or execute_command or start_daemon):
-            usage()
+            usage(__doc__)
             sys.exit(0)
     except Exception:
-        logger.exception("Failed to parse command line arguments!")
+        warning("Error: Failed to parse command line arguments!")
         sys.exit(1)
     # Start the guest daemon.
     try:
@@ -132,8 +134,3 @@ def main():
     except Exception:
         logger.exception("Caught a fatal exception! Terminating ..")
         sys.exit(1)
-
-
-def usage():
-    """Print a user friendly usage message to the terminal."""
-    print(__doc__.strip())

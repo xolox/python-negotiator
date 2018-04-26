@@ -49,7 +49,7 @@ setup(name='negotiator-common',
       include_package_data=True,
       install_requires=[
           'executor >= 1.3',
-          'humanfriendly >= 1.9.6',
+          'humanfriendly >= 4.12',
       ],
       classifiers=[
           'Development Status :: 4 - Beta',
