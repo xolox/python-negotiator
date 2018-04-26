@@ -161,6 +161,97 @@ expected.
    commands it's useful to know that commands on the KVM/QEMU host side have
    access to some `environment variables`_.
 
+Usage
+-----
+
+This section documents the command line interfaces of the programs running on
+hosts and guests. For information on the Python API please refer to the online
+documentation on `Read the Docs`_.
+
+.. contents::
+   :local:
+
+The negotiator-host program
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. A DRY solution to avoid duplication of the `negotiator-host --help' text:
+..
+.. [[[cog
+.. from humanfriendly.usage import inject_usage
+.. inject_usage('negotiator_host.cli')
+.. ]]]
+
+**Usage:** `negotiator-host [OPTIONS] GUEST_NAME`
+
+Communicate from a KVM/QEMU host system with running guest systems using a
+guest agent daemon running inside the guests.
+
+**Supported options:**
+
+.. csv-table::
+   :header: Option, Description
+   :widths: 30, 70
+
+
+   "``-g``, ``--list-guests``",List the names of the guests that have the appropriate channel.
+   "``-c``, ``--list-commands``",List the commands that the guest exposes to its host.
+   "``-e``, ``--execute=COMMAND``","Execute the given command inside GUEST_NAME. The standard output stream of
+   the command inside the guest is intercepted and copied to the standard
+   output stream on the host. If the command exits with a nonzero status code
+   the negotiator-host program will also exit with a nonzero status code."
+   "``-t``, ``--timeout=SECONDS``","Set the number of seconds before a remote call without a response times
+   out. A value of zero disables the timeout (in this case the command can
+   hang indefinitely). The default is 10 seconds."
+   "``-d``, ``--daemon``",Start the host daemon that answers real time requests from guests.
+   "``-v``, ``--verbose``",Make more noise (enables debugging).
+   "``-q``, ``--quiet``",Only show warnings and errors.
+   "``-h``, ``--help``",Show this message and exit.
+
+.. [[[end]]]
+
+The negotiator-guest program
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. A DRY solution to avoid duplication of the `negotiator-host --help' text:
+..
+.. [[[cog
+.. from humanfriendly.usage import inject_usage
+.. inject_usage('negotiator_guest.cli')
+.. ]]]
+
+**Usage:** `negotiator-guest [OPTIONS]`
+
+Communicate from a KVM/QEMU guest system to its host or start the
+guest daemon to allow the host to execute commands on its guests.
+
+**Supported options:**
+
+.. csv-table::
+   :header: Option, Description
+   :widths: 30, 70
+
+
+   "``-l``, ``--list-commands``",List the commands that the host exposes to its guests.
+   "``-e``, ``--execute=COMMAND``","Execute the given command on the KVM/QEMU host. The standard output stream
+   of the command on the host is intercepted and copied to the standard output
+   stream on the guest. If the command exits with a nonzero status code the
+   negotiator-guest program will also exit with a nonzero status code."
+   "``-d``, ``--daemon``","Start the guest daemon. When using this command line option the
+   ""negotiator-guest"" program never returns (unless an unexpected error
+   condition occurs)."
+   "``-t``, ``--timeout=SECONDS``","Set the number of seconds before a remote call without a response times
+   out. A value of zero disables the timeout (in this case the command can
+   hang indefinitely). The default is 10 seconds."
+   "``-c``, ``--character-device=PATH``","By default the appropriate character device is automatically selected based
+   on /sys/class/virtio-ports/\*/name. If the automatic selection doesn't work,
+   you can set the absolute pathname of the character device that's used to
+   communicate with the negotiator-host daemon running on the KVM/QEMU host."
+   "``-v``, ``--verbose``",Make more noise (enables debugging).
+   "``-q``, ``--quiet``",Only show warnings and errors.
+   "``-h``, ``--help``",Show this message and exit.
+
+.. [[[end]]]
+
 Debugging
 ---------
 
