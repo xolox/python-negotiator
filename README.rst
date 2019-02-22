@@ -71,8 +71,8 @@ experiences with supervisord_, here's how to set that up:
    [program:negotiator-host]
    command = /usr/local/bin/negotiator-host --daemon
    autostart = True
-   redirect_stderr = True
    stdout_logfile = /var/log/negotiator-host.log
+   stderr_logfile = /var/log/negotiator-host.log
    EOF
    $ sudo supervisorctl update negotiator-host
 
@@ -105,8 +105,8 @@ to set that up:
    [program:negotiator-guest]
    command = /usr/local/bin/negotiator-guest --daemon
    autostart = True
-   redirect_stderr = True
    stdout_logfile = /var/log/negotiator-guest.log
+   stderr_logfile = /var/log/negotiator-guest.log
    EOF
    $ sudo supervisorctl update negotiator-guest
 
