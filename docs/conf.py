@@ -27,15 +27,15 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'negotiator'
-copyright = u'2015, Peter Odding'
+project = 'negotiator'
+copyright = '2019, Peter Odding'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
 # Find the package version and make it the release.
-from negotiator_host import __version__ as negotiator_version
+from negotiator_host import __version__ as negotiator_version  # noqa
 
 # The short X.Y version.
 version = '.'.join(negotiator_version.split('.')[:2])
