@@ -11,6 +11,18 @@ to `semantic versioning`_.
 .. _Keep a Changelog: http://keepachangelog.com/
 .. _semantic versioning: http://semver.org/
 
+`Release 0.8.5`_ (2019-02-23)
+-----------------------------
+
+- Made channel discovery compatible with Ubuntu 18.04.
+- Added this changelog, restructured the documentation.
+- Embedded CLI usage messages in readme and documentation.
+- Updated ``supervisord`` configuration examples to use
+  ``stderr_logfile`` instead of ``redirect_stderr``.
+- Other minor changes not touching the code base.
+
+.. _Release 0.8.5: https://github.com/xolox/python-negotiator/compare/0.8.4...0.8.5
+
 `Release 0.8.4`_ (2016-04-08)
 -----------------------------
 

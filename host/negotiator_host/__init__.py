@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: April 26, 2018
+# Last Change: February 23, 2019
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -207,34 +207,51 @@ def find_available_channels(directory, name):
     """
     channels = {}
     suffix = '.%s' % name
-    running_guests = set(find_running_guests())
+    running_guests = dict(find_running_guests())
     for root, dirs, files in os.walk(directory):
         for filename in files:
-            # Validate the filename.
-            if filename.endswith(suffix):
-                # In Ubuntu 12.04 and 14.04 I have observed and now assume
-                # the following directory/file naming scheme for channels:
+            # Prepare to extract the guest name (and optionally the domain id)
+            # from the directory name and/or filename.
+            domain_id = None
+            guest_name = None
+            if filename == name:
+                # In Ubuntu 16.04 and 18.04 a separate directory with channels
+                # is created for each guest and the filenames of the UNIX
+                # sockets directly match the channel names:
+                #
+                # Ubuntu 16.04: /var/lib/libvirt/qemu/channel/target/domain-GUEST_NAME/negotiator-guest-to-host.0
+                # Ubuntu 18.04: /var/lib/libvirt/qemu/channel/target/domain-DOMAIN_ID-GUEST_NAME/negotiator-guest-to-host.0
+                #
+                # In this case the information we're interested in is encoded
+                # in the name of the directory inside the channels directory.
+                directory_name = os.path.basename(root)
+                without_prefix = re.sub(r'^domain-', '', directory_name)
+                domain_id, _, guest_name = without_prefix.partition('-')
+                if domain_id and guest_name:
+                    logger.debug("Found channel of guest '%s' (using new naming convention with domain id).", guest_name)
+                    domain_id = int(domain_id)
+                else:
+                    logger.debug("Found channel of guest '%s' (using new naming convention without domain id).", guest_name)
+                    domain_id = None
+                    guest_name = without_prefix
+            elif filename.endswith(suffix):
+                # In Ubuntu 12.04 and 14.04 all of the UNIX sockets are stored
+                # directly in the channels directory, without subdirectories:
                 #
                 # /var/lib/libvirt/qemu/channel/target/GUEST_NAME.negotiator-guest-to-host.0
                 guest_name = filename[:-len(suffix)]
-                logger.debug("Found channel of guest %r (using old naming convention).", guest_name)
-            elif filename == name:
-                # In Ubuntu 16.04 I have observed and now assume the
-                # following directory/file naming scheme for channels:
-                #
-                # /var/lib/libvirt/qemu/channel/target/domain-GUEST_NAME/negotiator-guest-to-host.0
-                guest_name = re.sub('^domain-', '', os.path.basename(root))
-                logger.debug("Found channel of guest %r (using new naming convention).", guest_name)
-            else:
-                continue
-            # Make sure the guest is available and running.
-            pathname = os.path.join(root, filename)
-            if guest_name in running_guests:
-                # Make sure we're dealing with a UNIX socket.
-                if stat.S_ISSOCK(os.stat(pathname).st_mode):
-                    channels[guest_name] = pathname
-            else:
-                logger.debug("Ignoring UNIX socket %s (guest %r isn't running) ..", pathname, guest_name)
+                logger.debug("Found channel of guest '%s' (using old naming convention).", guest_name)
+            if guest_name:
+                # Make sure the guest is available and running. The following
+                # check is a bit convoluted because it only validates the
+                # domain id when available.
+                if guest_name in running_guests and (running_guests[guest_name] == domain_id if domain_id else True):
+                    # Make sure we're dealing with a UNIX socket.
+                    pathname = os.path.join(root, filename)
+                    if stat.S_ISSOCK(os.stat(pathname).st_mode):
+                        channels[guest_name] = pathname
+                else:
+                    logger.debug("Ignoring UNIX socket %s (guest %r isn't running) ..", pathname, guest_name)
     return channels
 
 
@@ -253,15 +270,18 @@ def find_running_guests():
        the host system and there is AFAIK no obvious way to express this in the
        ``setup.py`` script of Negotiator.
 
-    :returns: A generator of strings with guest names.
+    :returns: A generator of tuples with two values each:
+
+              1. The name of the guest (a string).
+              2. The domain ID (an integer).
     """
     logger.debug("Discovering running guests using 'virsh list' command ..")
-    output = execute('virsh --quiet list --all', capture=True, logger=logger)
+    output = execute('virsh', '--quiet', 'list', '--all', capture=True, logger=logger)
     for line in output.splitlines():
         logger.debug("Parsing 'virsh list' output: %r", line)
         try:
             vm_id, vm_name, vm_status = line.split(None, 2)
-            if vm_status == 'running':
-                yield vm_name
+            if vm_id.isdigit() and vm_status == 'running':
+                yield vm_name, int(vm_id)
         except Exception:
             logger.warning("Failed to parse 'virsh list' output! (%r)", line)
