@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: February 23, 2019
+# Last Change: February 25, 2019
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -30,7 +30,7 @@ from negotiator_common.utils import GracefulShutdown
 from executor import execute
 
 # Semi-standard module versioning.
-__version__ = '0.8.5'
+__version__ = '0.8.6'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -148,16 +148,14 @@ class GuestChannel(NegotiatorInterface):
         self.guest_name = guest_name
         # Figure out the absolute pathname of the UNIX socket?
         if not unix_socket:
-            # The new naming convention is used on Ubuntu 16.04 while the old
-            # naming convention is used on 12.04 and 14.04.
-            new_style = os.path.join(CHANNELS_DIRECTORY, 'domain-%s' % self.guest_name, HOST_TO_GUEST_CHANNEL_NAME)
-            old_style = os.path.join(CHANNELS_DIRECTORY, '%s.%s' % (self.guest_name, HOST_TO_GUEST_CHANNEL_NAME))
-            if os.path.exists(new_style):
-                logger.debug("Found channel of guest %r (using new naming convention).", self.guest_name)
-                unix_socket = new_style
-            elif os.path.exists(old_style):
-                logger.debug("Found channel of guest %r (using old naming convention).", self.guest_name)
-                unix_socket = old_style
+            # Re-use the channel discovery code that 'negotiator-host --daemon'
+            # uses (somewhat inefficient because find_available_channels() does
+            # more work than we need it to, but the increased code reuse is
+            # good because it reduces bugs).
+            available_channels = find_available_channels(CHANNELS_DIRECTORY, HOST_TO_GUEST_CHANNEL_NAME)
+            if guest_name in available_channels:
+                logger.debug("Found channel of guest %r (based on channel discovery).", self.guest_name)
+                unix_socket = available_channels[guest_name]
             else:
                 msg = "No UNIX socket pathname provided and auto-detection failed!"
                 raise GuestChannelInitializationError(msg)

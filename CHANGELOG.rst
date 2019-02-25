@@ -11,6 +11,16 @@ to `semantic versioning`_.
 .. _Keep a Changelog: http://keepachangelog.com/
 .. _semantic versioning: http://semver.org/
 
+`Release 0.8.6`_ (2019-02-25)
+-----------------------------
+
+Follow-up to making channel discovery compatible with Ubuntu 18.04:
+
+- `Release 0.8.5`_ updated ``negotiator-host --daemon``.
+- `Release 0.8.6`_ updates ``negotiator-host --list-commands`` and similar commands.
+
+.. _Release 0.8.5: https://github.com/xolox/python-negotiator/compare/0.8.4...0.8.5
+
 `Release 0.8.5`_ (2019-02-23)
 -----------------------------
 
