@@ -63,9 +63,9 @@ from humanfriendly import Timer
 from humanfriendly.terminal import usage, warning
 
 # Modules included in our project.
-from negotiator_common.config import HOST_TO_GUEST_CHANNEL_NAME, DEFAULT_TIMEOUT
+from negotiator_common.config import DEFAULT_TIMEOUT
 from negotiator_common.utils import TimeOut
-from negotiator_host import HostDaemon, GuestChannel, find_available_channels
+from negotiator_host import HostDaemon, GuestChannel, find_supported_guests
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -130,9 +130,9 @@ class Context(object):
 
     def print_guest_names(self):
         """Print the names of the guests that Negotiator can connect with."""
-        channels = find_available_channels(HOST_TO_GUEST_CHANNEL_NAME)
-        if channels:
-            print('\n'.join(sorted(channels.keys())))
+        guests = find_supported_guests()
+        if guests:
+            print('\n'.join(sorted(guests)))
 
     def print_commands(self, guest_name):
         """Print the commands supported by the guest."""

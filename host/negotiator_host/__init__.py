@@ -17,7 +17,6 @@ import logging
 import multiprocessing
 import os
 import socket
-import stat
 import time
 import xml.etree.ElementTree
 
@@ -42,7 +41,8 @@ class HostDaemon(object):
 
     def __init__(self):
         """Initialize the host daemon."""
-        self.active_channels = {}
+        self.workers = {}
+        self.guests_to_ignore = set()
         self.enter_main_loop()
 
     def enter_main_loop(self):
@@ -50,38 +50,48 @@ class HostDaemon(object):
         with GracefulShutdown():
             try:
                 while True:
-                    self.update_active_channels()
+                    self.update_workers()
                     time.sleep(10)
             finally:
-                for channel in self.active_channels.values():
+                for channel in self.workers.values():
                     channel.terminate()
 
-    def update_active_channels(self):
+    def update_workers(self):
         """Automatically spawn subprocesses (workers) to maintain connections to all guests."""
         logger.debug("Synchronizing workers to channels ..")
-        # Discover the available channels (by checking for UNIX socket files).
-        available_channels = find_available_channels(GUEST_TO_HOST_CHANNEL_NAME).items()
-        # Synchronize the set of active channels with the set of available channels.
-        for key in set(self.active_channels) | set(available_channels):
-            guest_name, unix_socket = key
-            # Check if a previously spawned worker has died since the last update.
-            if key in self.active_channels and not self.active_channels[key].is_alive():
-                # Just remove the worker from the list of active channels, the
-                # following code will start a new worker when it notices that
-                # there is no worker associated with the channel anymore.
-                logger.warning("Existing channel to guest %s has died, cleaning up ..", guest_name)
-                self.active_channels.pop(key)
-            # Create channels for available UNIX sockets that don't have a channel yet.
-            if key in available_channels and key not in self.active_channels:
-                logger.info("Initializing channel to guest %s (UNIX socket %s) ..", guest_name, unix_socket)
-                channel = AutomaticGuestChannel(guest_name=guest_name, unix_socket=unix_socket)
-                channel.start()
-                self.active_channels[key] = channel
-            # Destroy previously created channels whose UNIX socket has since disappeared.
-            if key in self.active_channels and key not in available_channels:
-                logger.info("Destroying channel to guest %s (UNIX socket %s) ..", guest_name, unix_socket)
-                self.active_channels[key].terminate()
-                self.active_channels.pop(key)
+        running_guests = set(find_running_guests())
+        self.cleanup_workers(running_guests)
+        self.spawn_workers(running_guests)
+
+    def cleanup_workers(self, running_guests):
+        """Cleanup crashed workers and workers for guests that are no longer running."""
+        for guest_name in list(self.workers.keys()):
+            # Check for and cleanup crashed workers.
+            if not self.workers[guest_name].is_alive():
+                logger.warning("[%s] Cleaning up crashed worker ..", guest_name)
+                self.workers.pop(guest_name)
+            # Check for and terminate workers for guests that are no longer running.
+            if guest_name not in running_guests:
+                logger.info("[%s] Terminating worker because guest is no longer running ..", guest_name)
+                self.workers[guest_name].terminate()
+                self.workers.pop(guest_name)
+
+    def spawn_workers(self, running_guests):
+        """Spawn new workers on demand (ignoring guests known not to support negotiator)."""
+        for guest_name in sorted(running_guests - self.guests_to_ignore):
+            if guest_name not in self.workers:
+                available_channels = find_channels_of_guest(guest_name)
+                if GUEST_TO_HOST_CHANNEL_NAME in available_channels:
+                    logger.info("[%s] Initializing worker for guest ..", guest_name)
+                    self.workers[guest_name] = AutomaticGuestChannel(
+                        guest_name=guest_name, unix_socket=available_channels[GUEST_TO_HOST_CHANNEL_NAME],
+                    )
+                    self.workers[guest_name].start()
+                else:
+                    # Don't keep running 'virsh dumpxml' for this guest when we
+                    # know that it is not configured to support negotiator.
+                    logger.info("[%s] Doesn't support negotiator, adding to ignore list ..", guest_name)
+                    self.guests_to_ignore.add(guest_name)
 
 
 class AutomaticGuestChannel(multiprocessing.Process):
@@ -116,11 +126,13 @@ class AutomaticGuestChannel(multiprocessing.Process):
             channel.enter_main_loop()
         except GuestChannelInitializationError:
             # We know what the reason is here, so there's no need to log a noisy traceback.
-            logger.error("Failed to initialize channel to guest %r! (worker will respawn in a bit)", self.guest_name)
+            logger.error("[%s] Failed to initialize channel to guest! (worker will respawn in a bit)", self.guest_name)
         except Exception:
             # Unhandled exceptions get a traceback in the log output to make it easier to debug problems.
-            logger.exception("Caught exception while connecting to guest %r! (worker will respawn in a bit)",
-                             self.guest_name)
+            logger.exception(
+                "[%s] Caught exception while connecting to guest! (worker will respawn in a bit)",
+                self.guest_name,
+            )
 
 
 class GuestChannel(NegotiatorInterface):
@@ -181,21 +193,20 @@ class GuestChannelInitializationError(Exception):
     """Exception raised by :py:class:`GuestChannel` when socket initialization fails."""
 
 
-def find_available_channels(channel_name):
+def find_supported_guests():
     """
-    Find available channels using :func:`find_running_guests()` and :func:`find_channels_of_guest()`.
+    Find guests supporting the negotiator interface.
 
-    :param channel_name: The name of the channel to search for (a string).
-    :returns: A dictionary with KVM/QEMU guest names (strings) as keys and
-              pathnames of UNIX sockets (strings) as values.
+    :returns: A generator of strings with guest names.
+
+    This function uses :func:`find_running_guests()` to determine which guests
+    are currently running and then uses :func:`find_channels_of_guest()` to
+    determine which guests support the negotiator interface.
     """
-    channels = {}
     for guest_name in sorted(find_running_guests()):
         matches = find_channels_of_guest(guest_name)
-        pathname = matches.get(channel_name)
-        if pathname and is_unix_socket(pathname):
-            channels[guest_name] = pathname
-    return channels
+        if HOST_TO_GUEST_CHANNEL_NAME in matches:
+            yield guest_name
 
 
 def find_channels_of_guest(guest_name):
@@ -253,24 +264,7 @@ def find_running_guests():
         logger.debug("Parsing 'virsh list' output: %r", line)
         try:
             vm_id, vm_name, vm_status = line.split(None, 2)
-            if vm_id.isdigit() and vm_status == 'running':
+            if vm_status == 'running':
                 yield vm_name
         except Exception:
             logger.warning("Failed to parse 'virsh list' output! (%r)", line)
-
-
-def is_unix_socket(pathname):
-    """
-    Check if the given pathname points to a UNIX socket file.
-
-    :param pathname: The pathname to check (a string).
-    :returns: :data:`True` if the given pathname points to a UNIX socket file,
-              :data:`False` otherwise.
-
-    This function is specifically intended not to raise an exception when the
-    given pathname doesn't exist.
-    """
-    try:
-        return stat.S_ISSOCK(os.stat(pathname).st_mode)
-    except Exception:
-        return False
