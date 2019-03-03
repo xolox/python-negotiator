@@ -193,6 +193,11 @@ class GuestChannelInitializationError(Exception):
     """Exception raised by :class:`GuestChannel` when socket initialization fails."""
 
 
+class GuestDiscoveryError(Exception):
+
+    """Exception raised by :func:`find_running_guests()` when ``virsh list`` fails."""
+
+
 def find_supported_guests():
     """
     Find guests supporting the negotiator interface.
@@ -257,14 +262,19 @@ def find_running_guests():
        ``setup.py`` script of Negotiator.
 
     :returns: A generator of strings.
+    :raises: :exc:`GuestDiscoveryError` when ``virsh list`` fails.
     """
-    logger.debug("Discovering running guests using 'virsh list' command ..")
-    output = execute('virsh', '--quiet', 'list', '--all', capture=True, logger=logger)
-    for line in output.splitlines():
-        logger.debug("Parsing 'virsh list' output: %r", line)
-        try:
-            vm_id, vm_name, vm_status = line.split(None, 2)
-            if vm_status == 'running':
-                yield vm_name
-        except Exception:
-            logger.warning("Failed to parse 'virsh list' output! (%r)", line)
+    try:
+        logger.debug("Discovering running guests using 'virsh list' command ..")
+        output = execute('virsh', '--quiet', 'list', '--all', capture=True, logger=logger)
+    except ExternalCommandFailed:
+        raise GuestDiscoveryError("The 'virsh list' command failed! Are you sure libvirtd is running?")
+    else:
+        for line in output.splitlines():
+            logger.debug("Parsing 'virsh list' output: %r", line)
+            try:
+                vm_id, vm_name, vm_status = line.split(None, 2)
+                if vm_status == 'running':
+                    yield vm_name
+            except Exception:
+                logger.warning("Failed to parse 'virsh list' output! (%r)", line)

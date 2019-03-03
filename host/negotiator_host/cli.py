@@ -65,7 +65,7 @@ from humanfriendly.terminal import usage, warning
 # Modules included in our project.
 from negotiator_common.config import DEFAULT_TIMEOUT
 from negotiator_common.utils import TimeOut
-from negotiator_host import HostDaemon, GuestChannel, find_supported_guests
+from negotiator_host import GuestDiscoveryError, HostDaemon, GuestChannel, find_supported_guests
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
@@ -115,7 +115,12 @@ def main():
     try:
         for action in actions:
             action()
+    except GuestDiscoveryError as e:
+        # Don't spam the logs with tracebacks when the libvirt daemon is down.
+        logger.error("%s", e)
+        sys.exit(1)
     except Exception:
+        # Do log a traceback for `unexpected' exceptions.
         logger.exception("Caught a fatal exception! Terminating ..")
         sys.exit(1)
 
