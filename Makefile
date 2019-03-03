@@ -1,7 +1,7 @@
 # Makefile for negotiator.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: April 26, 2018
+# Last Change: March 3, 2019
 # URL: https://github.com/xolox/negotiator
 
 PROJECT_NAME = negotiator
@@ -33,7 +33,9 @@ install:
 	@pip uninstall --yes negotiator-host &>/dev/null || true
 	@pip uninstall --yes negotiator-guest &>/dev/null || true
 	@pip uninstall --yes negotiator-common &>/dev/null || true
-	@pip install --quiet --editable ./{common,host,guest}
+	@pip install --quiet --editable ./common
+	@pip install --quiet --editable ./host
+	@pip install --quiet --editable ./guest
 
 reset:
 	$(MAKE) clean
