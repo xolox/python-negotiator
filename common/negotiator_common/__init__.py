@@ -117,7 +117,7 @@ class NegotiatorInterface(object):
         That's it :-).
 
         :returns: The JSON value decoded to a Python value.
-        :raises: :py:exc:`ProtocolError` when the remote side violates the
+        :raises: :exc:`ProtocolError` when the remote side violates the
                  defined protocol.
         """
         logger.debug("Waiting for message from other side ..")
@@ -205,7 +205,7 @@ class NegotiatorInterface(object):
         - If ``success=False`` the key ``error`` gives a string explaining what
           went wrong.
 
-        :raises: :py:exc:`ProtocolError` when the remote side violates the
+        :raises: :exc:`ProtocolError` when the remote side violates the
                  defined protocol.
         """
         while True:

@@ -122,7 +122,7 @@ def main():
 
 class Context(object):
 
-    """Enables :py:func:`main()` to inject a custom timeout into partially applied actions."""
+    """Enables :func:`main()` to inject a custom timeout into partially applied actions."""
 
     def __init__(self):
         """Initialize a context for executing commands on the host."""

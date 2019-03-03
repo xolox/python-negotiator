@@ -35,7 +35,7 @@ class GracefulShutdown(object):
     Context manager to enable graceful handling of ``SIGTERM``.
 
     This context manager translates termination signals (``SIGTERM``) into
-    :py:class:`TerminationError` exceptions.
+    :class:`TerminationError` exceptions.
     """
 
     def __enter__(self):
@@ -47,7 +47,7 @@ class GracefulShutdown(object):
         signal.signal(signal.SIGTERM, self.previous_handler)
 
     def signal_handler(self, signum, frame):
-        """Raise :py:class:`TerminationError` when the timeout elapses."""
+        """Raise :class:`TerminationError` when the timeout elapses."""
         raise TerminationError()
 
 
@@ -75,7 +75,7 @@ class TimeOut(object):
         signal.signal(signal.SIGALRM, self.previous_handler)
 
     def signal_handler(self, signum, frame):
-        """Raise :py:class:`TimeOutError` when the timeout elapses."""
+        """Raise :class:`TimeOutError` when the timeout elapses."""
         raise TimeOutError()
 
 
@@ -86,4 +86,4 @@ class TerminationError(SystemExit):
 
 class TimeOutError(Exception):
 
-    """Exception raised by the :py:class:`TimeOut` context manager."""
+    """Exception raised by the :class:`TimeOut` context manager."""

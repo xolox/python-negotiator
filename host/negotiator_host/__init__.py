@@ -7,7 +7,7 @@
 """
 Channel for communication with guests.
 
-This module implements the :py:class:`GuestChannel` class which provides the
+This module implements the :class:`GuestChannel` class which provides the
 host side of the channel between QEMU hosts and guests. Channel objects can be
 used to query and command running guests.
 """
@@ -97,15 +97,15 @@ class HostDaemon(object):
 class AutomaticGuestChannel(multiprocessing.Process):
 
     """
-    Thin wrapper for :py:class:`GuestChannel` that puts it in a separate process.
+    Thin wrapper for :class:`GuestChannel` that puts it in a separate process.
 
-    Uses :py:class:`multiprocessing.Process` to isolate guest channels in
+    Uses :class:`multiprocessing.Process` to isolate guest channels in
     separate processes.
     """
 
     def __init__(self, guest_name, unix_socket):
         """
-        Initialize a :py:class:`GuestChannel` in a separate process.
+        Initialize a :class:`GuestChannel` in a separate process.
 
         :param guest_name: The name of the guest to connect to (a string).
         :param unix_socket: The absolute pathname of the UNIX socket that we
@@ -140,8 +140,8 @@ class GuestChannel(NegotiatorInterface):
     """
     The host side of the channel connecting KVM/QEMU hosts and guests.
 
-    See also :py:class:`AutomaticGuestChannel` which wraps
-    :py:class:`GuestChannel` and puts it in its own process.
+    See also :class:`AutomaticGuestChannel` which wraps
+    :class:`GuestChannel` and puts it in its own process.
     """
 
     def __init__(self, guest_name, unix_socket=None):
@@ -190,7 +190,7 @@ class GuestChannel(NegotiatorInterface):
 
 class GuestChannelInitializationError(Exception):
 
-    """Exception raised by :py:class:`GuestChannel` when socket initialization fails."""
+    """Exception raised by :class:`GuestChannel` when socket initialization fails."""
 
 
 def find_supported_guests():

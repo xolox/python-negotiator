@@ -57,10 +57,10 @@ class GuestAgent(NegotiatorInterface):
         Read a newline terminated string from the remote side.
 
         This method overrides the
-        :py:func:`~negotiator_common.NegotiatorInterface.raw_readline()` method
-        of the :py:func:`~negotiator_common.NegotiatorInterface` class to
-        implement blocking reads based on :py:data:`os.O_ASYNC` and
-        :py:data:`signal.SIGIO` (see also :py:class:`WaitForRead`).
+        :func:`~negotiator_common.NegotiatorInterface.raw_readline()` method
+        of the :func:`~negotiator_common.NegotiatorInterface` class to
+        implement blocking reads based on :data:`os.O_ASYNC` and
+        :data:`signal.SIGIO` (see also :class:`WaitForRead`).
 
         :returns: The data read from the remote side (a string).
         """
@@ -125,7 +125,7 @@ class GuestAgent(NegotiatorInterface):
 
 class WaitForRead(multiprocessing.Process):
 
-    """Used by :py:func:`GuestAgent.raw_readline()` to implement blocking reads."""
+    """Used by :func:`GuestAgent.raw_readline()` to implement blocking reads."""
 
     def run(self):
         """Endless loop that waits for one or more ``SIGIO`` signals to arrive."""
@@ -147,7 +147,7 @@ def find_character_device(port_name):
 
     :param port_name: The name of the virtio port (a string).
     :returns: The absolute pathname of a character device (a string).
-    :raises: :py:exc:`Exception` when the character device cannot be found.
+    :raises: :exc:`Exception` when the character device cannot be found.
     """
     root = '/sys/class/virtio-ports'
     logger.debug("Automatically selecting appropriate character device based on %s ..", root)
