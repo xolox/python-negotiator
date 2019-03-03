@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: April 26, 2018
+# Last Change: March 3, 2019
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -63,7 +63,7 @@ from humanfriendly import Timer
 from humanfriendly.terminal import usage, warning
 
 # Modules included in our project.
-from negotiator_common.config import CHANNELS_DIRECTORY, HOST_TO_GUEST_CHANNEL_NAME, DEFAULT_TIMEOUT
+from negotiator_common.config import HOST_TO_GUEST_CHANNEL_NAME, DEFAULT_TIMEOUT
 from negotiator_common.utils import TimeOut
 from negotiator_host import HostDaemon, GuestChannel, find_available_channels
 
@@ -130,7 +130,7 @@ class Context(object):
 
     def print_guest_names(self):
         """Print the names of the guests that Negotiator can connect with."""
-        channels = find_available_channels(CHANNELS_DIRECTORY, HOST_TO_GUEST_CHANNEL_NAME)
+        channels = find_available_channels(HOST_TO_GUEST_CHANNEL_NAME)
         if channels:
             print('\n'.join(sorted(channels.keys())))
 

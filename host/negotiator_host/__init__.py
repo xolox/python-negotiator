@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: February 25, 2019
+# Last Change: March 3, 2019
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -16,14 +16,14 @@ used to query and command running guests.
 import logging
 import multiprocessing
 import os
-import re
 import socket
 import stat
 import time
+import xml.etree.ElementTree
 
 # Modules included in our project.
 from negotiator_common import NegotiatorInterface
-from negotiator_common.config import CHANNELS_DIRECTORY, GUEST_TO_HOST_CHANNEL_NAME, HOST_TO_GUEST_CHANNEL_NAME
+from negotiator_common.config import GUEST_TO_HOST_CHANNEL_NAME, HOST_TO_GUEST_CHANNEL_NAME, SUPPORTED_CHANNEL_NAMES
 from negotiator_common.utils import GracefulShutdown
 
 # External dependencies.
@@ -40,15 +40,9 @@ class HostDaemon(object):
 
     """The host daemon automatically manages a group of processes that handle "guest to host" calls."""
 
-    def __init__(self, channel_directory=CHANNELS_DIRECTORY):
-        """
-        Initialize the host daemon.
-
-        :param channel_directory: The pathname of the directory containing
-                                  UNIX sockets connected to guests (a string).
-        """
+    def __init__(self):
+        """Initialize the host daemon."""
         self.active_channels = {}
-        self.channel_directory = channel_directory
         self.enter_main_loop()
 
     def enter_main_loop(self):
@@ -64,9 +58,9 @@ class HostDaemon(object):
 
     def update_active_channels(self):
         """Automatically spawn subprocesses (workers) to maintain connections to all guests."""
-        logger.debug("Checking for new/missing channels in %s ..", self.channel_directory)
+        logger.debug("Synchronizing workers to channels ..")
         # Discover the available channels (by checking for UNIX socket files).
-        available_channels = find_available_channels(self.channel_directory, GUEST_TO_HOST_CHANNEL_NAME).items()
+        available_channels = find_available_channels(GUEST_TO_HOST_CHANNEL_NAME).items()
         # Synchronize the set of active channels with the set of available channels.
         for key in set(self.active_channels) | set(available_channels):
             guest_name, unix_socket = key
@@ -125,7 +119,8 @@ class AutomaticGuestChannel(multiprocessing.Process):
             logger.error("Failed to initialize channel to guest %r! (worker will respawn in a bit)", self.guest_name)
         except Exception:
             # Unhandled exceptions get a traceback in the log output to make it easier to debug problems.
-            logger.exception("Caught exception while connecting to guest %r! (worker will respawn in a bit)", self.guest_name)
+            logger.exception("Caught exception while connecting to guest %r! (worker will respawn in a bit)",
+                             self.guest_name)
 
 
 class GuestChannel(NegotiatorInterface):
@@ -146,28 +141,24 @@ class GuestChannel(NegotiatorInterface):
                             should connect to (a string, optional).
         """
         self.guest_name = guest_name
-        # Figure out the absolute pathname of the UNIX socket?
+        # Figure out the pathname of the UNIX socket?
         if not unix_socket:
-            # Re-use the channel discovery code that 'negotiator-host --daemon'
-            # uses (somewhat inefficient because find_available_channels() does
-            # more work than we need it to, but the increased code reuse is
-            # good because it reduces bugs).
-            available_channels = find_available_channels(CHANNELS_DIRECTORY, HOST_TO_GUEST_CHANNEL_NAME)
-            if guest_name in available_channels:
-                logger.debug("Found channel of guest %r (based on channel discovery).", self.guest_name)
-                unix_socket = available_channels[guest_name]
+            available_channels = find_channels_of_guest(guest_name)
+            if HOST_TO_GUEST_CHANNEL_NAME in available_channels:
+                logger.debug("[%s] Found UNIX socket using channel discovery.", self.guest_name)
+                unix_socket = available_channels[HOST_TO_GUEST_CHANNEL_NAME]
             else:
                 msg = "No UNIX socket pathname provided and auto-detection failed!"
                 raise GuestChannelInitializationError(msg)
         # Connect to the UNIX socket.
-        logger.debug("Opening UNIX socket: %s", unix_socket)
+        logger.debug("[%s] Opening UNIX socket (%s) ..", self.guest_name, unix_socket)
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         try:
-            logger.debug("Connecting to UNIX socket: %s", unix_socket)
+            logger.debug("[%s] Connecting to UNIX socket ..", self.guest_name)
             self.socket.connect(unix_socket)
         except Exception:
             raise GuestChannelInitializationError("Guest refused connection attempt!")
-        logger.debug("Successfully connected to UNIX socket!")
+        logger.debug("[%s] Successfully connected to UNIX socket!", self.guest_name)
         # Initialize the super class, passing it a file like object connected
         # to the character device in read/write mode.
         super(GuestChannel, self).__init__(handle=self.socket.makefile(),
@@ -190,66 +181,52 @@ class GuestChannelInitializationError(Exception):
     """Exception raised by :py:class:`GuestChannel` when socket initialization fails."""
 
 
-def find_available_channels(directory, name):
+def find_available_channels(channel_name):
     """
-    Find available channels by checking for available UNIX sockets.
+    Find available channels using :func:`find_running_guests()` and :func:`find_channels_of_guest()`.
 
-    This uses :py:func:`find_running_guests()` to ignore UNIX sockets that are
-    not connected to a running guest (since these sockets are useless until
-    they become connected to a running guest).
-
-    :param directory: The pathname of the directory to search (a string).
-    :param name: The name of the channel to search for (a string).
+    :param channel_name: The name of the channel to search for (a string).
     :returns: A dictionary with KVM/QEMU guest names (strings) as keys and
-              pathnames of UNIX sockets as values.
+              pathnames of UNIX sockets (strings) as values.
     """
     channels = {}
-    suffix = '.%s' % name
-    running_guests = dict(find_running_guests())
-    for root, dirs, files in os.walk(directory):
-        for filename in files:
-            # Prepare to extract the guest name (and optionally the domain id)
-            # from the directory name and/or filename.
-            domain_id = None
-            guest_name = None
-            if filename == name:
-                # In Ubuntu 16.04 and 18.04 a separate directory with channels
-                # is created for each guest and the filenames of the UNIX
-                # sockets directly match the channel names:
-                #
-                # Ubuntu 16.04: /var/lib/libvirt/qemu/channel/target/domain-GUEST_NAME/negotiator-guest-to-host.0
-                # Ubuntu 18.04: /var/lib/libvirt/qemu/channel/target/domain-DOMAIN_ID-GUEST_NAME/negotiator-guest-to-host.0
-                #
-                # In this case the information we're interested in is encoded
-                # in the name of the directory inside the channels directory.
-                directory_name = os.path.basename(root)
-                without_prefix = re.sub(r'^domain-', '', directory_name)
-                domain_id, _, guest_name = without_prefix.partition('-')
-                if domain_id and guest_name:
-                    logger.debug("Found channel of guest '%s' (using new naming convention with domain id).", guest_name)
-                    domain_id = int(domain_id)
-                else:
-                    logger.debug("Found channel of guest '%s' (using new naming convention without domain id).", guest_name)
-                    domain_id = None
-                    guest_name = without_prefix
-            elif filename.endswith(suffix):
-                # In Ubuntu 12.04 and 14.04 all of the UNIX sockets are stored
-                # directly in the channels directory, without subdirectories:
-                #
-                # /var/lib/libvirt/qemu/channel/target/GUEST_NAME.negotiator-guest-to-host.0
-                guest_name = filename[:-len(suffix)]
-                logger.debug("Found channel of guest '%s' (using old naming convention).", guest_name)
-            if guest_name:
-                # Make sure the guest is available and running. The following
-                # check is a bit convoluted because it only validates the
-                # domain id when available.
-                if guest_name in running_guests and (running_guests[guest_name] == domain_id if domain_id else True):
-                    # Make sure we're dealing with a UNIX socket.
-                    pathname = os.path.join(root, filename)
-                    if stat.S_ISSOCK(os.stat(pathname).st_mode):
-                        channels[guest_name] = pathname
-                else:
-                    logger.debug("Ignoring UNIX socket %s (guest %r isn't running) ..", pathname, guest_name)
+    for guest_name in sorted(find_running_guests()):
+        matches = find_channels_of_guest(guest_name)
+        pathname = matches.get(channel_name)
+        if pathname and is_unix_socket(pathname):
+            channels[guest_name] = pathname
+    return channels
+
+
+def find_channels_of_guest(guest_name):
+    """
+    Find the pathnames of the channels associated to a guest.
+
+    :param guest_name: The name of the guest (a string).
+    :returns: A dictionary with channel names (strings) as keys and pathnames
+              of UNIX socket files (strings) as values. If no channels are
+              detected an empty dictionary will be returned.
+
+    This function uses ``virsh dumpxml`` and parses the XML output to
+    determine the pathnames of the channels associated to the guest.
+    """
+    logger.debug("Discovering '%s' channels using 'virsh dumpxml' command ..", guest_name)
+    domain_xml = execute('virsh', 'dumpxml', guest_name, capture=True)
+    parsed_xml = xml.etree.ElementTree.fromstring(domain_xml)
+    channels = {}
+    for channel in parsed_xml.findall('devices/channel'):
+        if channel.attrib.get('type') == 'unix':
+            source = channel.find('source')
+            target = channel.find('target')
+            if source is not None and target is not None and target.attrib.get('type') == 'virtio':
+                name = target.attrib.get('name')
+                path = source.attrib.get('path')
+                if name in SUPPORTED_CHANNEL_NAMES:
+                    channels[name] = path
+    if channels:
+        logger.debug("Discovered '%s' channels: %s", guest_name, channels)
+    else:
+        logger.debug("No channels found for guest '%s'.", guest_name)
     return channels
 
 
@@ -268,10 +245,7 @@ def find_running_guests():
        the host system and there is AFAIK no obvious way to express this in the
        ``setup.py`` script of Negotiator.
 
-    :returns: A generator of tuples with two values each:
-
-              1. The name of the guest (a string).
-              2. The domain ID (an integer).
+    :returns: A generator of strings.
     """
     logger.debug("Discovering running guests using 'virsh list' command ..")
     output = execute('virsh', '--quiet', 'list', '--all', capture=True, logger=logger)
@@ -280,6 +254,23 @@ def find_running_guests():
         try:
             vm_id, vm_name, vm_status = line.split(None, 2)
             if vm_id.isdigit() and vm_status == 'running':
-                yield vm_name, int(vm_id)
+                yield vm_name
         except Exception:
             logger.warning("Failed to parse 'virsh list' output! (%r)", line)
+
+
+def is_unix_socket(pathname):
+    """
+    Check if the given pathname points to a UNIX socket file.
+
+    :param pathname: The pathname to check (a string).
+    :returns: :data:`True` if the given pathname points to a UNIX socket file,
+              :data:`False` otherwise.
+
+    This function is specifically intended not to raise an exception when the
+    given pathname doesn't exist.
+    """
+    try:
+        return stat.S_ISSOCK(os.stat(pathname).st_mode)
+    except Exception:
+        return False

@@ -1,15 +1,12 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: April 26, 2018
+# Last Change: March 3, 2019
 # URL: https://negotiator.readthedocs.org
 
 """Configuration defaults for the `negotiator` project."""
 
 import os
-
-CHANNELS_DIRECTORY = '/var/lib/libvirt/qemu/channel/target'
-"""The pathname of the directory containing the host side of each channel."""
 
 USER_COMMANDS_DIRECTORY = '/usr/lib/negotiator/commands'
 """
@@ -25,6 +22,12 @@ GUEST_TO_HOST_CHANNEL_NAME = 'negotiator-guest-to-host.0'
 
 HOST_TO_GUEST_CHANNEL_NAME = 'negotiator-host-to-guest.0'
 """The name of the channel that's used for communication initiated by the host (a string)."""
+
+SUPPORTED_CHANNEL_NAMES = (GUEST_TO_HOST_CHANNEL_NAME, HOST_TO_GUEST_CHANNEL_NAME)
+"""
+A tuple of strings with supported channel names (containing
+:data:`GUEST_TO_HOST_CHANNEL_NAME` and :data:`HOST_TO_GUEST_CHANNEL_NAME`).
+"""
 
 DEFAULT_TIMEOUT = 10
 """
