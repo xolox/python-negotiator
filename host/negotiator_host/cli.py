@@ -39,11 +39,11 @@ Supported options:
 
   -v, --verbose
 
-    Make more noise (enables debugging).
+    Increase logging verbosity (can be repeated).
 
   -q, --quiet
 
-    Only show warnings and errors.
+    Decrease logging verbosity (can be repeated).
 
   -h, --help
 

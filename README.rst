@@ -203,8 +203,8 @@ guest agent daemon running inside the guests.
    out. A value of zero disables the timeout (in this case the command can
    hang indefinitely). The default is 10 seconds."
    "``-d``, ``--daemon``",Start the host daemon that answers real time requests from guests.
-   "``-v``, ``--verbose``",Make more noise (enables debugging).
-   "``-q``, ``--quiet``",Only show warnings and errors.
+   "``-v``, ``--verbose``",Increase logging verbosity (can be repeated).
+   "``-q``, ``--quiet``",Decrease logging verbosity (can be repeated).
    "``-h``, ``--help``",Show this message and exit.
 
 .. [[[end]]]
@@ -246,8 +246,8 @@ guest daemon to allow the host to execute commands on its guests.
    on /sys/class/virtio-ports/\*/name. If the automatic selection doesn't work,
    you can set the absolute pathname of the character device that's used to
    communicate with the negotiator-host daemon running on the KVM/QEMU host."
-   "``-v``, ``--verbose``",Make more noise (enables debugging).
-   "``-q``, ``--quiet``",Only show warnings and errors.
+   "``-v``, ``--verbose``",Increase logging verbosity (can be repeated).
+   "``-q``, ``--quiet``",Decrease logging verbosity (can be repeated).
    "``-h``, ``--help``",Show this message and exit.
 
 .. [[[end]]]

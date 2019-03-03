@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: April 26, 2018
+# Last Change: March 3, 2019
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -44,11 +44,11 @@ Supported options:
 
   -v, --verbose
 
-    Make more noise (enables debugging).
+    Increase logging verbosity (can be repeated).
 
   -q, --quiet
 
-    Only show warnings and errors.
+    Decrease logging verbosity (can be repeated).
 
   -h, --help
 
