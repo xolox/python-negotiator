@@ -51,7 +51,7 @@ setup(name='negotiator-guest',
       ]),
       install_requires=[
           'coloredlogs >= 5.0',
-          'negotiator-common >= 0.9',
+          'negotiator-common >= 0.10',
       ],
       classifiers=[
           'Development Status :: 4 - Beta',

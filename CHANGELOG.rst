@@ -11,6 +11,36 @@ to `semantic versioning`_.
 .. _Keep a Changelog: http://keepachangelog.com/
 .. _semantic versioning: http://semver.org/
 
+`Release 0.10`_ (2019-03-03)
+----------------------------
+
+Clarify verbosity control
+ Update the command line interface usage messages to clarify that the options
+ ``--verbose`` and ``--quiet`` can be repeated (in response to `#1`_).
+
+No traceback when guest discovery fails
+ Don't log a traceback when guest discovery using the ``virsh list`` command
+ fails, to avoid spamming the logs about a known problem. This change was made
+ to counteract the following interaction:
+
+ - The negotiator documentation specifically suggests to use a process
+   supervision solution like supervisord_ to automatically restart the
+   negotiator daemon when it dies.
+
+ - When the libvirt daemon is down ``virsh list`` will fail and the negotiator
+   daemon dies with a rather verbose traceback (before `release 0.10`_).
+
+ - Because supervisord_ automatically restarts the negotiator daemon but
+   doesn't know about the libvirt dependency, several restarts may be required
+   to get the negotiator daemon up and running again.
+
+ - This "restart until it stays up" interaction would result in quite a few
+   useless tracebacks being logged which "polluted" the logs and might raise
+   the impression that something is really broken (that can't be fixed by an
+   automatic restart).
+
+.. _Release 0.10: https://github.com/xolox/python-negotiator/compare/0.9...0.10
+
 `Release 0.9`_ (2019-03-03)
 ---------------------------
 
@@ -47,14 +77,16 @@ Follow-up to making channel discovery compatible with Ubuntu 18.04:
 `Release 0.8.5`_ (2019-02-23)
 -----------------------------
 
-- Made channel discovery compatible with Ubuntu 18.04.
+- Made channel discovery compatible with Ubuntu 18.04 (related to `#1`_).
 - Added this changelog, restructured the documentation.
 - Embedded CLI usage messages in readme and documentation.
-- Updated ``supervisord`` configuration examples to use
+- Updated supervisord_ configuration examples to use
   ``stderr_logfile`` instead of ``redirect_stderr``.
 - Other minor changes not touching the code base.
 
 .. _Release 0.8.5: https://github.com/xolox/python-negotiator/compare/0.8.4...0.8.5
+.. _#1: https://github.com/xolox/python-negotiator/pull/1
+.. _supervisord: http://supervisord.org/
 
 `Release 0.8.4`_ (2016-04-08)
 -----------------------------
