@@ -29,7 +29,7 @@ from negotiator_common import NegotiatorInterface
 from negotiator_common.utils import compact, GracefulShutdown
 
 # Semi-standard module versioning.
-__version__ = '0.8.6'
+__version__ = '0.9'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)

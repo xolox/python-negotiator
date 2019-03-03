@@ -11,6 +11,29 @@ to `semantic versioning`_.
 .. _Keep a Changelog: http://keepachangelog.com/
 .. _semantic versioning: http://semver.org/
 
+`Release 0.9`_ (2019-03-03)
+---------------------------
+
+Refactored channel discovery to use ``virsh list`` and ``virsh dumpxml``:
+
+- The recent addition of Ubuntu 18.04 support proved once again that the
+  old channel discovery strategy was error prone and hard to maintain.
+
+- Since then it had come to my attention that on Ubuntu 18.04 guest names
+  embedded in pathnames of UNIX sockets may be truncated in which case the
+  domain id provides the only way to match a UNIX socket to its guest.
+
+- Despite the previous point, I also wanted to maintain compatibility with
+  libvirt releases that don't embed the domain id in the pathnames. Doing so
+  based on the old channel discovery strategy would have become messy.
+
+So I decided to take a big step back and opted for a new strategy that will
+hopefully prove to be more robust and future proof. Thanks to `@tarmack`_ for
+initially suggesting this approach.
+
+.. _Release 0.9: https://github.com/xolox/python-negotiator/compare/0.8.6...0.9
+.. _@tarmack: https://github.com/tarmack
+
 `Release 0.8.6`_ (2019-02-25)
 -----------------------------
 
