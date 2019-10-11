@@ -11,6 +11,47 @@ to `semantic versioning`_.
 .. _Keep a Changelog: http://keepachangelog.com/
 .. _semantic versioning: http://semver.org/
 
+`Release 0.11`_ (2019-10-11)
+----------------------------
+
+Fix error in error handling in ``negotiator-host``
+ This resolves the traceback below when ``negotiator-host`` is running but
+ 'crashes' because ``virsh list`` fails because it can't connect to
+ ``libvirtd``. This situation is still an unrecoverable error, but the
+ intention was for it to be an unrecoverable error that did not produce a
+ traceback...
+
+ .. code-block:: none
+
+    Traceback (most recent call last):
+      File ".../negotiator_host/cli.py", line 117, in main
+        action()
+      File ".../negotiator_host/__init__.py", line 46, in __init__
+        self.enter_main_loop()
+      File ".../negotiator_host/__init__.py", line 53, in enter_main_loop
+        self.update_workers()
+      File ".../negotiator_host/__init__.py", line 62, in update_workers
+        running_guests = set(find_running_guests())
+      File ".../negotiator_host/__init__.py", line 270, in find_running_guests
+        except ExternalCommandFailed:
+    NameError: global name 'ExternalCommandFailed' is not defined
+
+Cleaned up flake8 F401 (imported but unused) warning
+ As a result of moving to ``humanfriendly.compact()``.
+
+Minor changes relating to Python versions
+ Two minor changes relating to Python version compatibility:
+
+ - Unbreak ``make docs`` (Sphinx insists on Python 3, and rightfully so).
+
+ - Replace Python 2.6 reference in README with Python 2.7.
+
+ Compatibility with Python 3 hasn't been verified but is more or less expected
+ given a pure Python code base. Maybe a Unicode error slipped in here or there,
+ as I said "to be verified".
+
+.. _Release 0.11: https://github.com/xolox/python-negotiator/compare/0.10...0.11
+
 `Release 0.10`_ (2019-03-03)
 ----------------------------
 

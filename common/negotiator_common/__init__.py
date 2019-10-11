@@ -32,7 +32,7 @@ from negotiator_common.utils import format_call
 from negotiator_common.config import BUILTIN_COMMANDS_DIRECTORY, USER_COMMANDS_DIRECTORY
 
 # Semi-standard module versioning.
-__version__ = '0.10'
+__version__ = '0.11'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
