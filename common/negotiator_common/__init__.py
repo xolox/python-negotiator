@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: April 26, 2018
+# Last Change: October 11, 2019
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -25,10 +25,10 @@ import os
 
 # External dependencies.
 from executor import execute
-from humanfriendly import Timer
+from humanfriendly import Timer, compact
 
 # Modules included in our project.
-from negotiator_common.utils import compact, format_call
+from negotiator_common.utils import format_call
 from negotiator_common.config import BUILTIN_COMMANDS_DIRECTORY, USER_COMMANDS_DIRECTORY
 
 # Semi-standard module versioning.
