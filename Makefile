@@ -1,7 +1,7 @@
 # Makefile for negotiator.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: March 3, 2019
+# Last Change: October 11, 2019
 # URL: https://github.com/xolox/negotiator
 
 PROJECT_NAME = negotiator
@@ -27,9 +27,8 @@ default:
 
 install:
 	@test -d "$(VIRTUAL_ENV)" || mkdir -p "$(VIRTUAL_ENV)"
-	@test -x "$(VIRTUAL_ENV)/bin/python" || virtualenv --quiet "$(VIRTUAL_ENV)"
+	@test -x "$(VIRTUAL_ENV)/bin/python" || virtualenv --python=python3 --quiet "$(VIRTUAL_ENV)"
 	@test -x "$(VIRTUAL_ENV)/bin/pip" || easy_install pip
-	@test -x "$(VIRTUAL_ENV)/bin/pip-accel" || pip install --quiet pip-accel
 	@pip uninstall --yes negotiator-host &>/dev/null || true
 	@pip uninstall --yes negotiator-guest &>/dev/null || true
 	@pip uninstall --yes negotiator-common &>/dev/null || true
