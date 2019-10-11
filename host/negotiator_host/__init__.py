@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: March 3, 2019
+# Last Change: October 11, 2019
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -26,7 +26,7 @@ from negotiator_common.config import GUEST_TO_HOST_CHANNEL_NAME, HOST_TO_GUEST_C
 from negotiator_common.utils import GracefulShutdown
 
 # External dependencies.
-from executor import execute
+from executor import ExternalCommandFailed, execute
 
 # Semi-standard module versioning.
 __version__ = '0.10'
@@ -268,7 +268,7 @@ def find_running_guests():
         logger.debug("Discovering running guests using 'virsh list' command ..")
         output = execute('virsh', '--quiet', 'list', '--all', capture=True, logger=logger)
     except ExternalCommandFailed:
-        raise GuestDiscoveryError("The 'virsh list' command failed! Are you sure libvirtd is running?")
+        raise GuestDiscoveryError("The 'virsh list' command failed! Most likely libvirtd isn't running...")
     else:
         for line in output.splitlines():
             logger.debug("Parsing 'virsh list' output: %r", line)
