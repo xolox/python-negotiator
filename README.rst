@@ -33,7 +33,7 @@ Some points to consider:
 Installation
 ------------
 
-The `negotiator` packages and their dependencies are compatible with Python 2.6
+The `negotiator` packages and their dependencies are compatible with Python 2.7
 and newer and are all pure Python. This means you don't need a compiler
 toolchain to install the `negotiator` packages. This is a design decision and
 so won't be changed.
