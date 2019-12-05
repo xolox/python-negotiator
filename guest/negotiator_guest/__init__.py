@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: October 11, 2019
+# Last Change: December 5, 2019
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -12,6 +12,7 @@ running inside KVM/QEMU guests.
 """
 
 # Standard library modules.
+import errno
 import fcntl
 import itertools
 import logging
@@ -39,18 +40,39 @@ class GuestAgent(NegotiatorInterface):
 
     """Implementation of the daemon running inside KVM/QEMU guests."""
 
-    def __init__(self, character_device):
+    def __init__(self, character_device, retry=False):
         """
         Initialize a negotiator guest agent.
 
         :param character_device: The absolute pathname of the character device
                                  that we should use to connect to the host (a
                                  string).
+        :param retry: :data:`True` to retry ``EBUSY`` errors, :data:`False`
+                      otherwise (defaults to :data:`False`).
+
+        .. note:: When ``retry`` is :data:`True` it is (somewhat theoretically)
+                  possible for infinite retrying to cause control to never be
+                  returned to the caller. This is why callers are expected to
+                  use :class:`~negotiator_common.utils.TimeOut` or a similar
+                  solution.
         """
-        # Initialize the super class, passing it a file like object connected
-        # to the character device in read/write mode.
-        super(GuestAgent, self).__init__(handle=open(character_device, 'r+'),
-                                         label="character device %s" % character_device)
+        custom_open = self.retry_open if retry else open
+        super(GuestAgent, self).__init__(
+            handle=custom_open(character_device, 'r+'),
+            label="character device %s" % character_device,
+        )
+
+    def retry_open(self, character_device, mode):
+        """Open the character device and retry ``EBUSY`` errors."""
+        while True:
+            try:
+                return open(character_device, mode)
+            except OSError as e:
+                if e.errno == errno.EBUSY:
+                    logger.debug("Retrying access to %s after EBUSY error ..", character_device)
+                    time.sleep(1)
+                else:
+                    raise
 
     def raw_readline(self):
         """
