@@ -11,6 +11,23 @@ to `semantic versioning`_.
 .. _Keep a Changelog: http://keepachangelog.com/
 .. _semantic versioning: http://semver.org/
 
+`Release 0.12`_ (2019-12-05)
+----------------------------
+
+Retry character device access in guest agent when ``EBUSY`` error is reported.
+
+At my employer we operate 200+ virtual servers that have Negotiator installed
+and in recent months we've started building more and more monitoring on top of
+Negotiator, resulting in hundreds of invocations per day. This is when I
+started seeing intermittent errors like the following::
+
+ IOError: [Errno 16] Device or resource busy: '/dev/vport2p2'
+
+The new retry on ``EBUSY`` behavior is intended to minimize occurrences of such
+race conditions.
+
+.. _Release 0.12: https://github.com/xolox/python-negotiator/compare/0.11...0.12
+
 `Release 0.11`_ (2019-10-11)
 ----------------------------
 
