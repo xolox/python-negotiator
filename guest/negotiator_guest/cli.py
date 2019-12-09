@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: December 5, 2019
+# Last Change: December 9, 2019
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -120,16 +120,16 @@ def main():
             channel_name = HOST_TO_GUEST_CHANNEL_NAME if start_daemon else GUEST_TO_HOST_CHANNEL_NAME
             character_device = find_character_device(channel_name)
         if start_daemon:
-            agent = GuestAgent(character_device)
+            agent = GuestAgent(character_device=character_device, retry=False)
             agent.enter_main_loop()
         elif list_commands:
             with TimeOut(timeout):
-                agent = GuestAgent(character_device)
+                agent = GuestAgent(character_device, retry=True)
                 print('\n'.join(agent.call_remote_method('list_commands')))
         elif execute_command:
             with TimeOut(timeout):
                 timer = Timer()
-                agent = GuestAgent(character_device)
+                agent = GuestAgent(character_device, retry=True)
                 output = agent.call_remote_method('execute', *shlex.split(execute_command), capture=True)
                 logger.debug("Took %s to execute remote command.", timer)
                 print(output.rstrip())
