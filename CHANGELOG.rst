@@ -11,6 +11,18 @@ to `semantic versioning`_.
 .. _Keep a Changelog: http://keepachangelog.com/
 .. _semantic versioning: http://semver.org/
 
+`Release 0.12.1`_ (2019-12-09)
+------------------------------
+
+**Enable retry in guest CLI.**
+
+This is a follow up to `release 0.12`_ because I neglected to add
+``retry=True`` to the ``negotiator_guest.cli`` module in that
+release (the new behavior is opt-in in the Python API so as to
+improve backwards compatibility and make the API more foolproof).
+
+.. _Release 0.12.1: https://github.com/xolox/python-negotiator/compare/0.12...0.12.1
+
 `Release 0.12`_ (2019-12-05)
 ----------------------------
 

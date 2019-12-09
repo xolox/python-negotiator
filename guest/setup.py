@@ -3,7 +3,7 @@
 # Setup script for the `negotiator-guest' package.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: March 3, 2019
+# Last Change: December 9, 2019
 # URL: https://negotiator.readthedocs.org
 
 """Setup script for the ``negotiator-guest`` package."""
@@ -51,7 +51,7 @@ setup(name='negotiator-guest',
       ]),
       install_requires=[
           'coloredlogs >= 5.0',
-          'negotiator-common >= 0.12',
+          'negotiator-common >= 0.12.1',
       ],
       classifiers=[
           'Development Status :: 4 - Beta',
