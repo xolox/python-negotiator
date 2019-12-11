@@ -1,7 +1,7 @@
 # Scriptable KVM/QEMU guest agent in Python.
 #
 # Author: Peter Odding <peter@peterodding.com>
-# Last Change: December 9, 2019
+# Last Change: December 11, 2019
 # URL: https://negotiator.readthedocs.org
 
 """
@@ -67,7 +67,7 @@ class GuestAgent(NegotiatorInterface):
         while True:
             try:
                 return open(character_device, mode)
-            except OSError as e:
+            except EnvironmentError as e:
                 if e.errno == errno.EBUSY:
                     logger.debug("Retrying access to %s after EBUSY error ..", character_device)
                     time.sleep(1)
