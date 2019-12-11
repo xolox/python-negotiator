@@ -11,6 +11,27 @@ to `semantic versioning`_.
 .. _Keep a Changelog: http://keepachangelog.com/
 .. _semantic versioning: http://semver.org/
 
+`Release 0.12.2`_ (2019-12-11)
+------------------------------
+
+Bug fix for 2 most recent releases: ``s/OSError/EnvironmentError/g``
+
+This is a follow up to / bug fix for `release 0.12`_ and `release 0.12.1`_
+where I accidentally used ``OSError`` when I should have used ``IOError`` or
+the generic parent class ``EnvironmentError``. I've verified that
+``EnvironmentError`` is compatible with both Python 2.7 and 3.
+
+The last few releases clearly show the value of having an automated test suite
+to guard against regressions, unfortunately due to the nature of the Negotiator
+project I'm not quite sure how I would get a functional test suite up and
+running on Travis CI.
+
+It's definitely possible, and on my wish list, but it is one of the higher
+hanging fruits on that -almost infinite- wish list, so don't hold your breath
+😛.
+
+.. _Release 0.12.2: https://github.com/xolox/python-negotiator/compare/0.12.1...0.12.2
+
 `Release 0.12.1`_ (2019-12-09)
 ------------------------------
 

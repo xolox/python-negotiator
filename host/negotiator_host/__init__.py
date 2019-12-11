@@ -29,7 +29,7 @@ from negotiator_common.utils import GracefulShutdown
 from executor import ExternalCommandFailed, execute
 
 # Semi-standard module versioning.
-__version__ = '0.12.1'
+__version__ = '0.12.2'
 
 # Initialize a logger for this module.
 logger = logging.getLogger(__name__)
